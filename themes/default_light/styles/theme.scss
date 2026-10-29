@@ -1,0 +1,54 @@
+// Default Light — a bright variant that keeps the same layout.
+:root[data-theme='default_light'] {
+  color-scheme: light;
+
+  --bg: #f2f5fb;
+  --bg-glow: radial-gradient(1000px 560px at 12% -10%, rgb(47 109 246 / 12%), transparent 60%);
+  --surface: #ffffff;
+  --surface-2: #eef2f9;
+  --surface-raised: #f7f9fd;
+  --border: #dbe3f0;
+  --border-strong: #c3cee1;
+  --text: #172033;
+  --muted: #5f6f8a;
+  --accent: #2f6df6;
+  --accent-strong: #1d54d0;
+  --accent-contrast: #ffffff;
+  --accent-gradient: linear-gradient(135deg, #2f6df6, #5f9bff);
+  --danger: #d43d3d;
+  --success: #16885a;
+  --warning: #a87400;
+  --shadow: 0 20px 45px rgb(23 32 51 / 10%);
+
+  .topbar {
+    background: rgb(255 255 255 / 82%);
+    backdrop-filter: blur(14px);
+  }
+
+  .sidebar {
+    background: linear-gradient(180deg, #ffffff, #f7f9fd);
+  }
+
+  .brand__mark {
+    box-shadow: 0 8px 20px rgb(47 109 246 / 25%);
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme='default_light'] .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

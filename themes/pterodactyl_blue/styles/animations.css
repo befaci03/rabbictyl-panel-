@@ -1,0 +1,65 @@
+/* Keyframes live in plain CSS so themes can share them without a Sass pass. */
+@keyframes rc-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rc-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes rc-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(54 169 225 / 35%);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgb(54 169 225 / 0%);
+  }
+}
+
+.animate-fade-in {
+  animation: rc-fade-in 0.35s ease both;
+}
+
+.animate-rise {
+  animation: rc-rise 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.animate-pulse {
+  animation: rc-pulse 1.8s ease-in-out infinite;
+}
+
+.badge--starting {
+  animation: rc-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-rise,
+  .animate-pulse,
+  .badge--starting {
+    animation: none !important;
+  }
+}

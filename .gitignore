@@ -1,37 +1,56 @@
-/vendor
-*.DS_Store*
-!.env.ci
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+
+# Rider / Visual Studio / VS Code
+.idea/
+.vs/
+.vscode/
+
+# Local configuration, secrets and runtime state
+config/panel.toml
+*.local.toml
+.env
+.env.*
 !.env.example
-.env*
-.vagrant/*
-.vscode/*
-storage/framework/*
-/.idea
-/nbproject
-/.direnv
+storage/
+src/RabbiCtyl.Web/storage/
 
-node_modules
+# Local work tracker
+todo.md
+
+# Databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
 *.log
-_ide_helper.php
-_ide_helper_models.php
-.phpstorm.meta.php
-.yarn
-public/assets/manifest.json
 
-# For local development with docker
-# Remove if we ever put the Dockerfile in the repo
-.dockerignore
-docker-compose.*
-!docker-compose.example.yml
-!docker-compose.example.yaml
+# Node / frontend
+node_modules/
+frontend/dist/
 
-# for image related files
-misc
-.php-cs-fixer.cache
-coverage.xml
-resources/lang/locales.js
-.phpunit.result.cache
+# Generated frontend and extension bundles
+src/RabbiCtyl.Web/wwwroot/assets/css/
+src/RabbiCtyl.Web/wwwroot/assets/js/
+src/RabbiCtyl.Web/wwwroot/themes/
+src/RabbiCtyl.Web/wwwroot/addons/
+src/RabbiCtyl.Web/wwwroot/assets/**/*.map
 
-/public/build
-/public/hot
-result
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Test results
+TestResults/
+coverage/
+coverage.*
+*.trx

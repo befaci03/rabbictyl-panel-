@@ -1,0 +1,23 @@
+{
+  "name": "rabbictyl-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.2",
+  "description": "Build pipeline for the RabbiCtyl panel shell, themes and addons.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:prod": "node scripts/build.mjs --production",
+    "typecheck": "tsc --noEmit",
+    "clean": "node scripts/build.mjs --clean"
+  },
+  "dependencies": {
+    "@microsoft/signalr": "^9.0.0",
+    "@microsoft/signalr-protocol-msgpack": "^9.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "sass": "^1.85.0",
+    "typescript": "^5.7.3"
+  }
+}

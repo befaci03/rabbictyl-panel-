@@ -1,0 +1,47 @@
+// Pterodactyl Blue — sea-blue surfaces with a teal highlight.
+:root[data-theme='pterodactyl_blue'] {
+  color-scheme: dark;
+
+  --bg: #05121c;
+  --bg-glow: radial-gradient(1000px 600px at 85% -10%, rgb(54 169 225 / 20%), transparent 62%);
+  --surface: #0a2231;
+  --surface-2: #0f3044;
+  --surface-raised: #123a51;
+  --border: #17455f;
+  --border-strong: #226183;
+  --text: #e6f4fb;
+  --muted: #86a9bc;
+  --accent: #36a9e1;
+  --accent-strong: #63c6f2;
+  --accent-contrast: #031019;
+  --accent-gradient: linear-gradient(135deg, #36a9e1, #3ddc97);
+  --danger: #ff6b6b;
+  --success: #3ddc97;
+  --warning: #ffcf5c;
+  --shadow: 0 24px 60px rgb(0 0 0 / 50%);
+
+  .sidebar {
+    background: linear-gradient(180deg, #0a2434, #071a27 70%);
+    border-right-color: var(--border-strong);
+  }
+
+  .topbar {
+    background: rgb(10 34 49 / 82%);
+    backdrop-filter: blur(14px);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .topbar.is-scrolled {
+    border-bottom-color: var(--accent);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 35%);
+  }
+
+  .brand__mark {
+    background: var(--accent-gradient);
+    box-shadow: 0 8px 24px rgb(54 169 225 / 35%);
+  }
+
+  .nav__link--active {
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+}

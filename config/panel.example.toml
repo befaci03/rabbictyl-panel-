@@ -1,0 +1,73 @@
+# RabbiCtyl panel configuration.
+#
+# Copy this file to `config/panel.toml` and edit it. The panel reads the file
+# from `RABBICTYL_CONFIG` when set, otherwise from `config/panel.toml` next to
+# the executable (or the current working directory during development).
+#
+# Every value can also be overridden with an environment variable; see the
+# README for the full list.
+
+[app]
+name = "RabbiCtyl"
+url = "http://localhost:8080"
+environment = "Development"
+debug = true
+timezone = "UTC"
+locale = "en"
+
+[server]
+# Use 0.0.0.0 to listen on every interface.
+host = "0.0.0.0"
+port = 8080
+behind_proxy = false
+
+[database]
+# sqlite | mariadb | mysql | postgresql | mongodb | cassandra
+provider = "sqlite"
+
+# Relational providers (sqlite, mariadb, mysql, postgresql) use this value.
+connection_string = "Data Source=rabbictyl.db"
+
+# MongoDB database name. Falls back to the database in the connection string.
+database_name = "rabbictyl"
+
+# Cassandra keyspace.
+keyspace = "rabbictyl"
+
+[cache]
+# memory | redis
+driver = "memory"
+connection_string = ""
+
+[security]
+cookie_name = "rabbictyl_session"
+session_lifetime_minutes = 120
+bcrypt_work_factor = 12
+require_https = false
+
+[logging]
+# Trace | Debug | Information | Warning | Error | Critical | None
+level = "Information"
+
+[themes]
+# Theme folders live here. Each folder needs a manifest.json.
+# Bundled: default_dark (default), default_light, pterodactyl_blue.
+directory = "themes"
+active = "default_dark"
+
+[addons]
+# Addon folders live here. Each folder needs a manifest.json.
+directory = "addons"
+
+[storage]
+# Runtime state (active theme, etc). Keep this writable by the panel process.
+directory = "storage"
+
+[bootstrap]
+# Creates the first administrator when the user table is empty.
+# Prefer supplying the password with RABBICTYL_BOOTSTRAP_ADMIN_PASSWORD
+# instead of writing it to disk.
+seed_admin = true
+admin_email = "admin@example.com"
+admin_username = "admin"
+admin_password = ""

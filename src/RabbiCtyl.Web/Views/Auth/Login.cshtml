@@ -1,0 +1,33 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Sign in";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+}
+<section class="auth">
+    <div class="auth__panel card">
+        <div class="auth__brand">
+            <span class="brand__mark">R</span>
+            <span class="brand__text">RabbiCtyl</span>
+        </div>
+        <h1 class="auth__title">Welcome back</h1>
+        <p class="auth__subtitle">Sign in to manage your game servers.</p>
+        <form method="post" asp-controller="Auth" asp-action="Login" asp-route-returnUrl="@returnUrl" class="form">
+            <div asp-validation-summary="ModelOnly" class="alert alert--danger"></div>
+            <div class="form__group">
+                <label asp-for="Login" class="form__label"></label>
+                <input asp-for="Login" class="form__input" autocomplete="username" autofocus />
+                <span asp-validation-for="Login" class="form__error"></span>
+            </div>
+            <div class="form__group">
+                <label asp-for="Password" class="form__label"></label>
+                <input asp-for="Password" class="form__input" autocomplete="current-password" />
+                <span asp-validation-for="Password" class="form__error"></span>
+            </div>
+            <label class="form__check">
+                <input asp-for="RememberMe" />
+                <span>@Html.DisplayNameFor(model => model.RememberMe)</span>
+            </label>
+            <button type="submit" class="button button--primary button--block">Sign in</button>
+        </form>
+    </div>
+</section>

@@ -1,0 +1,105 @@
+@inject IThemeState ThemeState
+@inject IThemeCatalog ThemeCatalog
+@inject IAddonCatalog AddonCatalog
+@inject IAntiforgery Antiforgery
+@{
+    var authenticated = User.Identity?.IsAuthenticated == true;
+    var activeTheme = await ThemeCatalog.FindAsync(ThemeState.ActiveThemeId);
+    var addons = authenticated
+        ? await AddonCatalog.ListAsync(enabledOnly: true)
+        : Array.Empty<AddonDescriptor>();
+    var csrfToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var title = ViewData["Title"] as string;
+    var logoUrl = activeTheme is not null && activeTheme.AssetUrls.TryGetValue("logo", out var themeLogo)
+        ? themeLogo
+        : null;
+}
+<!DOCTYPE html>
+<html lang="en" data-theme="@(activeTheme?.Id ?? "default_dark")">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content="@csrfToken" />
+    <title>@(title is null ? "RabbiCtyl" : $"{title} · RabbiCtyl")</title>
+    @if (logoUrl is not null)
+    {
+        <link rel="icon" href="@logoUrl" />
+    }
+    <link rel="stylesheet" href="~/assets/css/app.css" asp-append-version="true" />
+    @if (activeTheme is not null)
+    {
+        foreach (var style in activeTheme.StylesheetUrls)
+        {
+            <link rel="stylesheet" href="@style" />
+        }
+    }
+</head>
+<body data-authenticated="@(authenticated ? "true" : "false")">
+@if (authenticated)
+{
+    <div class="app-shell">
+        <aside class="sidebar">                <a class="brand" asp-controller="Home" asp-action="Index">
+                    <span class="brand__mark">
+                        @if (logoUrl is not null)
+                        {
+                            <img src="@logoUrl" alt="" width="28" height="28" />
+                        }
+                        else
+                        {
+                            <span>R</span>
+                        }
+                    </span>
+                    <span class="brand__text">RabbiCtyl</span>
+                </a>
+            <nav class="nav">
+                <a class="nav__link nav__link--active" asp-controller="Home" asp-action="Index">Dashboard</a>
+                <span class="nav__link nav__link--disabled">Servers</span>
+                <span class="nav__link nav__link--disabled">Nodes</span>
+                <span class="nav__link nav__link--disabled">Users</span>
+                <span class="nav__link nav__link--disabled">Themes</span>
+                <span class="nav__link nav__link--disabled">Addons</span>
+            </nav>
+        </aside>
+        <div class="app-main">
+            <header class="topbar">
+                <div class="topbar__title">@title</div>
+                <div class="topbar__user">
+                    <span class="topbar__name">@User.GetDisplayName()</span>
+                    <form method="post" asp-controller="Auth" asp-action="Logout">
+                        <button type="submit" class="button button--ghost button--sm">Sign out</button>
+                    </form>
+                </div>
+            </header>
+            <main class="content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+}
+else
+{
+    <main class="content content--bare">
+        @RenderBody()
+    </main>
+}
+<script src="~/assets/js/app.js" asp-append-version="true"></script>
+@if (authenticated)
+{
+    foreach (var addon in addons)
+    {
+        foreach (var script in addon.ScriptUrls)
+        {
+            <script type="module" src="@script"></script>
+        }
+    }
+}
+@if (activeTheme is not null)
+{
+    foreach (var script in activeTheme.ScriptUrls)
+    {
+        <script type="module" src="@script"></script>
+    }
+}
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

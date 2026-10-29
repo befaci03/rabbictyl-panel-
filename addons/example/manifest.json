@@ -1,0 +1,14 @@
+{
+  "id": "example",
+  "name": "Example Addon",
+  "version": "1.0.0",
+  "description": "Shows an addon badge and reads its icon through the addon asset API.",
+  "author": "RabbiCtyl",
+  "enabled": true,
+  "scripts": [
+    "scripts/main.ts"
+  ],
+  "assets": {
+    "icon": "assets/icon.svg"
+  }
+}

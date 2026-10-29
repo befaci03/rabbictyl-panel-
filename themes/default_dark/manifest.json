@@ -1,0 +1,17 @@
+{
+  "id": "default_dark",
+  "name": "Default Dark",
+  "version": "1.0.0",
+  "description": "The default RabbiCtyl theme: deep navy surfaces with a soft blue accent.",
+  "author": "RabbiCtyl",
+  "styles": [
+    "styles/theme.scss",
+    "styles/animations.css"
+  ],
+  "scripts": [
+    "scripts/theme.ts"
+  ],
+  "assets": {
+    "logo": "assets/mark.svg"
+  }
+}

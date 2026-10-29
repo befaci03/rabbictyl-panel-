@@ -1,0 +1,17 @@
+{
+  "id": "pterodactyl_blue",
+  "name": "Pterodactyl Blue",
+  "version": "1.0.0",
+  "description": "A deep sea-blue theme with teal accents, inspired by Pterodactyl's palette.",
+  "author": "RabbiCtyl",
+  "styles": [
+    "styles/theme.scss",
+    "styles/animations.css"
+  ],
+  "scripts": [
+    "scripts/theme.ts"
+  ],
+  "assets": {
+    "logo": "assets/mark.svg"
+  }
+}
