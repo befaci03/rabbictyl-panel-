@@ -1,0 +1,11 @@
+@{
+    var culture = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+}
+
+<label class="locale-switcher">
+    <span class="visually-hidden">@L["language.label"]</span>
+    <select id="locale-select" class="locale-switcher__select" aria-label="@L["language.label"]">
+        <option value="en" selected="@(culture == "en" ? "selected" : null)">English</option>
+        <option value="fr" selected="@(culture == "fr" ? "selected" : null)">Français</option>
+    </select>
+</label>

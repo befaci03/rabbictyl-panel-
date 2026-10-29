@@ -1,47 +1,56 @@
-// Pterodactyl Blue — sea-blue surfaces with a teal highlight.
+// Pterodactyl Blue — slate surfaces with the panel's blue accent and compact
+// controls. This theme also selects the Pterodactyl-style layouts.
 :root[data-theme='pterodactyl_blue'] {
   color-scheme: dark;
 
-  --bg: #05121c;
-  --bg-glow: radial-gradient(1000px 600px at 85% -10%, rgb(54 169 225 / 20%), transparent 62%);
-  --surface: #0a2231;
-  --surface-2: #0f3044;
-  --surface-raised: #123a51;
-  --border: #17455f;
-  --border-strong: #226183;
-  --text: #e6f4fb;
-  --muted: #86a9bc;
-  --accent: #36a9e1;
-  --accent-strong: #63c6f2;
-  --accent-contrast: #031019;
-  --accent-gradient: linear-gradient(135deg, #36a9e1, #3ddc97);
-  --danger: #ff6b6b;
-  --success: #3ddc97;
-  --warning: #ffcf5c;
-  --shadow: 0 24px 60px rgb(0 0 0 / 50%);
+  --bg: #1f2937;
+  --bg-glow: none;
+  --surface: #111827;
+  --surface-2: #1f2937;
+  --surface-raised: #374151;
+  --border: #374151;
+  --border-strong: #4b5563;
+  --text: #f3f4f6;
+  --muted: #9ca3af;
+  --accent: #3b82f6;
+  --accent-strong: #60a5fa;
+  --accent-soft: rgb(59 130 246 / 16%);
+  --accent-contrast: #ffffff;
+  --accent-gradient: linear-gradient(180deg, #3b82f6, #2563eb);
+  --brand: #e8542f;
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --shadow: 0 2px 10px rgb(0 0 0 / 22%);
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius: 5px;
+  --radius-lg: 7px;
+  --sidebar-width: 238px;
 
   .sidebar {
-    background: linear-gradient(180deg, #0a2434, #071a27 70%);
-    border-right-color: var(--border-strong);
+    background: #0f172a;
   }
 
   .topbar {
-    background: rgb(10 34 49 / 82%);
-    backdrop-filter: blur(14px);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .topbar.is-scrolled {
-    border-bottom-color: var(--accent);
-    box-shadow: 0 10px 30px rgb(0 0 0 / 35%);
-  }
-
-  .brand__mark {
-    background: var(--accent-gradient);
-    box-shadow: 0 8px 24px rgb(54 169 225 / 35%);
+    background: #111827;
   }
 
   .nav__link--active {
     box-shadow: inset 3px 0 0 var(--accent);
   }
+
+  .auth__shell {
+    grid-template-columns: 1fr;
+    width: min(430px, 100%);
+  }
+
+  .auth__aside {
+    display: none;
+  }
+
+  .auth__form-side {
+    padding: 30px;
+  }
 }
+

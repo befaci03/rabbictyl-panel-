@@ -1,0 +1,200 @@
+@inject IThemeState ThemeState
+@inject IThemeCatalog ThemeCatalog
+@inject IAddonCatalog AddonCatalog
+@inject IAntiforgery Antiforgery
+@inject PanelOptions PanelOptions
+@inject IServerStore ServerStore
+@{
+    var authenticated = User.Identity?.IsAuthenticated == true;
+    var activeTheme = await ThemeCatalog.FindAsync(ThemeState.ActiveThemeId);
+    var addons = authenticated
+        ? await AddonCatalog.ListAsync(enabledOnly: true)
+        : Array.Empty<AddonDescriptor>();
+    var csrfToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var title = ViewData["Title"] as string ?? "Dashboard";
+    var displayName = authenticated ? User.GetDisplayName() : string.Empty;
+    var isAdmin = authenticated && User.IsInRole("admin");
+    var currentServer = ViewData["Server"] as Server;
+    var currentSection = ViewData["ServerSection"] as string ?? "console";
+    var logoUrl = activeTheme is not null && activeTheme.AssetUrls.TryGetValue("logo", out var themeLogo)
+        ? themeLogo
+        : null;
+    var environmentLabel = string.Equals(
+        PanelOptions.App.Environment,
+        "Development",
+        StringComparison.OrdinalIgnoreCase)
+        ? L["env.development"]
+        : PanelOptions.App.Environment;
+
+    IReadOnlyList<Server> sidebarServers = [];
+
+    if (authenticated)
+    {
+        var userId = User.GetUserId();
+        sidebarServers = isAdmin
+            ? await ServerStore.ListAsync()
+            : userId is null
+                ? []
+                : await ServerStore.ListForUserAsync(userId.Value);
+        sidebarServers = sidebarServers.OrderBy(server => server.Name).ToList();
+    }
+
+    string StatusClass(ServerStatus status) => status switch
+    {
+        ServerStatus.Running => "is-running",
+        ServerStatus.Starting or ServerStatus.Installing or ServerStatus.RestoringBackup => "is-busy",
+        ServerStatus.Stopping or ServerStatus.Suspended or ServerStatus.InstallFailed => "is-stopped",
+        _ => "is-offline",
+    };
+
+    var sectionLabel = currentServer is not null
+        ? L[$"nav.{currentSection}"]
+        : title;
+}
+<!DOCTYPE html>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="@(activeTheme?.Id ?? "default_dark")">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content="@csrfToken" />
+    <meta name="theme-color" content="#111827" />
+    <title>@title · RabbiCtyl</title>
+    <link rel="icon" href="@(logoUrl ?? Url.Content("~/logo.svg"))" />
+    <link rel="stylesheet" href="~/assets/css/app.css" asp-append-version="true" />
+    @if (activeTheme is not null)
+    {
+        foreach (var style in activeTheme.StylesheetUrls)
+        {
+            <link rel="stylesheet" href="@style" />
+        }
+    }
+</head>
+<body class="ptero-body" data-authenticated="@(authenticated ? "true" : "false")">
+@if (authenticated)
+{
+    <div class="ptero-shell" id="app-shell">
+        <aside class="ptero-sidebar" id="sidebar">
+            <a class="ptero-brand" asp-controller="Home" asp-action="Index">
+                <partial name="_BrandMark" />
+                <span class="ptero-brand__text">
+                    <span class="ptero-brand__name">RabbiCtyl</span>
+                    <span class="ptero-brand__sub">@L["brand.subtitle"]</span>
+                </span>
+            </a>
+
+            <div class="ptero-sidebar__scroll">
+                <div class="ptero-servers">
+                    <span class="ptero-sidebar__heading">@L["nav.servers"]</span>
+                    @if (sidebarServers.Count == 0)
+                    {
+                        <span class="ptero-servers__empty">@L["home.empty.title"]</span>
+                    }
+                    else
+                    {
+                        foreach (var sidebarServer in sidebarServers)
+                        {
+                            var active = currentServer is not null && currentServer.Uuid == sidebarServer.Uuid;
+                            <a class="ptero-server @(active ? "is-active" : string.Empty)"
+                               asp-controller="Server" asp-action="Index" asp-route-uuid="@sidebarServer.Uuid">
+                                <span class="ptero-server__dot @StatusClass(sidebarServer.Status)"></span>
+                                <span class="ptero-server__name">@sidebarServer.Name</span>
+                                <span class="ptero-server__status">@sidebarServer.Status</span>
+                            </a>
+                        }
+                    }
+                </div>
+
+                <partial name="_SidebarNav" />
+            </div>
+
+            <div class="ptero-sidebar__footer">
+                <div class="ptero-user">
+                    <span class="ptero-user__meta">
+                        <span class="ptero-user__name">@displayName</span>
+                        <span class="ptero-user__role">@(isAdmin ? L["role.admin"] : L["role.member"])</span>
+                    </span>
+                    <form method="post" asp-controller="Auth" asp-action="Logout" class="user-chip__form">
+                        <button type="submit" class="icon-button" title="@L["nav.signout"]" aria-label="@L["nav.signout"]">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                                <path d="M14 4.5h3A2.5 2.5 0 0 1 19.5 7v10a2.5 2.5 0 0 1-2.5 2.5h-3" />
+                                <path d="M10 8l4 4-4 4M14 12H4.5" />
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </aside>
+
+        <div class="ptero-backdrop" data-sidebar-close aria-hidden="true"></div>
+
+        <div class="ptero-main">
+            <header class="ptero-topbar">
+                <button type="button"
+                        class="ptero-menu"
+                        id="sidebar-toggle"
+                        aria-controls="sidebar"
+                        aria-label="@L["nav.open"]"
+                        aria-expanded="false"
+                        title="@L["nav.open"]"
+                        data-label-open="@L["nav.open"]"
+                        data-label-close="@L["nav.close"]">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16" />
+                    </svg>
+                </button>
+
+                <div class="ptero-topbar__crumb">
+                    <a class="ptero-topbar__app" asp-controller="Home" asp-action="Index">@PanelOptions.App.Name</a>
+                    <span class="ptero-topbar__slash">/</span>
+                    @if (currentServer is not null)
+                    {
+                        <a asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid">@currentServer.Name</a>
+                        <span class="ptero-topbar__slash">/</span>
+                        <strong>@sectionLabel</strong>
+                    }
+                    else
+                    {
+                        <strong>@title</strong>
+                    }
+                </div>
+
+                <div class="ptero-topbar__meta">
+                    <span class="ptero-topbar__user">@displayName</span>
+                    <partial name="_LocaleSwitcher" />
+                    <span class="pill pill--muted">@environmentLabel</span>
+                </div>
+            </header>
+
+            <main class="ptero-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+}
+else
+{
+    <main class="content content--bare">
+        @RenderBody()
+    </main>
+}
+<script src="~/assets/js/app.js" asp-append-version="true"></script>
+@if (authenticated)
+{
+    foreach (var addon in addons)
+    {
+        foreach (var script in addon.ScriptUrls)
+        {
+            <script type="module" src="@script"></script>
+        }
+    }
+}
+@if (activeTheme is not null)
+{
+    foreach (var script in activeTheme.ScriptUrls)
+    {
+        <script type="module" src="@script"></script>
+    }
+}
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,187 @@
+@model AdminNodesViewModel
+@{
+    ViewData["Title"] = "Nodes";
+
+    string NodeConfig(Node node)
+    {
+        var cert = $"/etc/letsencrypt/live/{node.Fqdn.ToLowerInvariant()}/fullchain.pem";
+        var key = $"/etc/letsencrypt/live/{node.Fqdn.ToLowerInvariant()}/privkey.pem";
+
+        return $@"debug: false
+uuid: {node.Uuid}
+token_id: {node.DaemonTokenId}
+token: {node.DaemonToken}
+api:
+  host: 0.0.0.0
+  port: {node.DaemonPort}
+  ssl:
+    enabled: {(node.UseSsl && !node.BehindProxy ? "true" : "false")}
+    cert: {cert}
+    key: {key}
+  upload_limit: {node.UploadSizeMb}
+system:
+  data: {node.DaemonBase}
+  sftp:
+    bind_port: {node.DaemonSftpPort}
+allowed_mounts: []
+remote: {Model.PanelUrl}";
+    }
+}
+
+<section class="page">
+    <header class="page__header">
+        <div>
+            <span class="eyebrow">@L["admin.eyebrow"]</span>
+            <h1 class="page__title">@L["admin.nodes"]</h1>
+            <p class="page__subtitle">Daemon nodes registered with this panel.</p>
+        </div>
+        <span class="pill pill--muted">@Model.Nodes.Count</span>
+    </header>
+
+    <partial name="_AdminTabs" />
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert--success" role="status">@success</div>
+    }
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert--danger" role="alert">@error</div>
+    }
+
+    <details class="card admin-create" @(Model.Nodes.Count == 0 ? "open" : null)>
+        <summary class="admin-create__summary">
+            <span>
+                <strong>Add node</strong>
+                <span class="admin-create__hint">Create the panel record and get its pats config.</span>
+            </span>
+            <span class="button button--primary button--sm">New node</span>
+        </summary>
+        <div class="admin-create__body">
+            <form method="post" asp-controller="Admin" asp-action="CreateNode" class="form">
+                <div class="admin-create__grid">
+                    <div class="form__group">
+                        <label class="form__label" for="node-name">Name</label>
+                        <input class="form__input" id="node-name" name="Name" required maxlength="64" placeholder="eu-1" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="node-fqdn">FQDN</label>
+                        <input class="form__input" id="node-fqdn" name="Fqdn" required maxlength="255" placeholder="node.example.com" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="node-port">Daemon port</label>
+                        <input class="form__input" id="node-port" name="DaemonPort" type="number" value="8080" min="1" max="65535" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="node-sftp">SFTP port</label>
+                        <input class="form__input" id="node-sftp" name="DaemonSftpPort" type="number" value="2022" min="1" max="65535" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="node-memory">Memory (MB)</label>
+                        <input class="form__input" id="node-memory" name="MemoryMb" type="number" value="4096" min="128" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="node-disk">Disk (MB)</label>
+                        <input class="form__input" id="node-disk" name="DiskMb" type="number" value="51200" min="1024" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="node-upload">Upload limit (MB)</label>
+                        <input class="form__input" id="node-upload" name="UploadSizeMb" type="number" value="100" min="1" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="node-base">Data directory</label>
+                        <input class="form__input" id="node-base" name="DaemonBase" value="/var/lib/pterodactyl/volumes" required />
+                    </div>
+                </div>
+
+                <div class="admin-create__checks">
+                    <label class="form__check">
+                        <input type="checkbox" name="UseSsl" value="true" checked />
+                        Use HTTPS for the daemon
+                    </label>
+                    <label class="form__check">
+                        <input type="checkbox" name="BehindProxy" value="true" />
+                        Daemon is behind a proxy
+                    </label>
+                </div>
+
+                <div class="admin-create__actions">
+                    <button type="submit" class="button button--primary">Create node</button>
+                </div>
+            </form>
+        </div>
+    </details>
+
+    <section class="card card--flush">
+        @if (Model.Nodes.Count == 0)
+        {
+            <div class="empty">
+                <p class="empty__title">No nodes registered</p>
+                <p class="empty__hint">Create a node, write its config to pats, then link it.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Node</th>
+                            <th>FQDN</th>
+                            <th class="table__number">Daemon port</th>
+                            <th class="table__number">Memory</th>
+                            <th class="table__number">Disk</th>
+                            <th>Status</th>
+                            <th>Connection</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var node in Model.Nodes)
+                    {
+                        <tr>
+                            <td>
+                                <span class="table__primary">@node.Name</span>
+                                @if (!node.Public)
+                                {
+                                    <span class="table__secondary">Private</span>
+                                }
+                            </td>
+                            <td>@node.Fqdn</td>
+                            <td class="table__number">@node.DaemonPort</td>
+                            <td class="table__number">@node.MemoryLimitMb MB</td>
+                            <td class="table__number">@node.DiskLimitMb MB</td>
+                            <td>
+                                @if (node.MaintenanceMode)
+                                {
+                                    <span class="badge badge--suspended">Maintenance</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge--running">Active</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="table__actions">
+                                    <form method="post" asp-controller="Admin" asp-action="LinkNode" asp-route-uuid="@node.Uuid" class="inline-form">
+                                        <button type="submit" class="button button--ghost button--sm">Link</button>
+                                    </form>
+                                    <details class="node-config">
+                                        <summary class="button button--ghost button--sm">config.yml</summary>
+                                        <div class="node-config__body">
+                                            <p class="form__hint">
+                                                Paste this into <code>/etc/pterodactyl/config.yml</code>, start pats, then press Link.
+                                            </p>
+                                            <textarea class="code-block" rows="18" readonly spellcheck="false">@NodeConfig(node)</textarea>
+                                        </div>
+                                    </details>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</section>

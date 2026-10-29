@@ -1,0 +1,69 @@
+@model ThemesViewModel
+@{
+    ViewData["Title"] = "Themes";
+    var isAdmin = User.IsInRole("admin");
+}
+
+<section class="page">
+    <header class="page__header">
+        <div>
+            <span class="eyebrow">Appearance</span>
+            <h1 class="page__title">Themes</h1>
+            <p class="page__subtitle">Themes installed in the panel's theme folder.</p>
+        </div>
+        <span class="pill pill--muted">@Model.Themes.Count</span>
+    </header>
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert--success" role="status">@success</div>
+    }
+
+    @if (Model.Themes.Count == 0)
+    {
+        <div class="card empty">
+            <p class="empty__title">No themes installed</p>
+            <p class="empty__hint">Add a folder with a manifest.json to the themes directory.</p>
+        </div>
+    }
+    else
+    {
+        <div class="theme-grid">
+            @foreach (var theme in Model.Themes)
+            {
+                var isActive = string.Equals(theme.Id, Model.ActiveThemeId, StringComparison.Ordinal);
+                <article class="theme-card card @(isActive ? "is-active" : string.Empty)">
+                    <div class="theme-card__top">
+                        <span class="theme-card__swatch" aria-hidden="true"></span>
+                        @if (isActive)
+                        {
+                            <span class="badge badge--running">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge">Inactive</span>
+                        }
+                    </div>
+                    <h2 class="theme-card__name">@theme.Name</h2>
+                    <p class="theme-card__description">@(theme.Manifest.Description ?? "No description provided.")</p>
+                    <dl class="theme-card__meta">
+                        <div>
+                            <dt>Version</dt>
+                            <dd>@theme.Manifest.Version</dd>
+                        </div>
+                        <div>
+                            <dt>Author</dt>
+                            <dd>@theme.Manifest.Author</dd>
+                        </div>
+                    </dl>
+                    @if (isAdmin && !isActive)
+                    {
+                        <form method="post" asp-controller="Themes" asp-action="Activate" asp-route-id="@theme.Id">
+                            <button type="submit" class="button button--primary button--sm">Activate</button>
+                        </form>
+                    }
+                </article>
+            }
+        </div>
+    }
+</section>

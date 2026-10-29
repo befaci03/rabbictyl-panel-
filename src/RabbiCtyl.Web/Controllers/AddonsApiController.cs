@@ -7,6 +7,7 @@ using RabbiCtyl.Web.Models;
 namespace RabbiCtyl.Web.Controllers;
 
 [ApiController]
+[Authorize(Roles = "admin")]
 [Route("api/addons")]
 public sealed class AddonsApiController : ControllerBase
 {
@@ -17,7 +18,6 @@ public sealed class AddonsApiController : ControllerBase
         _addons = addons;
     }
 
-    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<AddonDto>>> List(
         [FromQuery] bool enabledOnly = false,
@@ -28,7 +28,6 @@ public sealed class AddonsApiController : ControllerBase
         return Ok(addons.Select(ToDto).ToList());
     }
 
-    [AllowAnonymous]
     [HttpGet("{id}")]
     public async Task<ActionResult<AddonDto>> Get(string id, CancellationToken cancellationToken)
     {
@@ -37,7 +36,6 @@ public sealed class AddonsApiController : ControllerBase
         return addon is null ? NotFound() : Ok(ToDto(addon));
     }
 
-    [AllowAnonymous]
     [HttpGet("{id}/assets/{assetId}")]
     public async Task<IActionResult> Asset(string id, string assetId, CancellationToken cancellationToken)
     {

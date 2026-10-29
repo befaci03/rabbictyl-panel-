@@ -1,5 +1,7 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using RabbiCtyl.Configuration;
@@ -7,6 +9,7 @@ using RabbiCtyl.Configuration.Options;
 using RabbiCtyl.Infrastructure;
 using RabbiCtyl.Web;
 using RabbiCtyl.Web.Hubs;
+using RabbiCtyl.Web.Localization;
 using RabbiCtyl.Web.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +26,8 @@ builder.Services.AddRabbiCtylInfrastructure(options);
 builder.Services.AddAntiforgery(antiforgery => antiforgery.HeaderName = "X-CSRF-TOKEN");
 builder.Services.AddControllersWithViews(mvc => mvc.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 builder.Services.AddSignalR().AddMessagePackProtocol();
+builder.Services.AddLocalization();
+builder.Services.AddScoped<IPanelLocalizer, PanelLocalizer>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -71,6 +76,15 @@ if (options.Server.BehindProxy)
 }
 
 app.UseStaticFiles();
+
+var supportedCultures = new[] { new CultureInfo("en"), new CultureInfo("fr") };
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture("en"),
+    SupportedCultures = supportedCultures,
+    SupportedUICultures = supportedCultures,
+});
+
 app.UseRouting();
 app.UseMiddleware<DaemonAuthenticationMiddleware>();
 app.UseAntiforgery();

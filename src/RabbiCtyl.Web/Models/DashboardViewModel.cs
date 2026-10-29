@@ -4,11 +4,10 @@ namespace RabbiCtyl.Web.Models;
 
 public sealed class DashboardViewModel
 {
-    public int ServerCount { get; init; }
-
-    public int NodeCount { get; init; }
-
-    public int UserCount { get; init; }
-
     public IReadOnlyList<Server> Servers { get; init; } = [];
+
+    public bool ShowAllServers { get; init; }
+
+    public IReadOnlyDictionary<Guid, string> OwnerNames { get; init; } =
+        new Dictionary<Guid, string>();
 }

@@ -1,36 +1,24 @@
-// Default Dark — the panel's default theme.
-// Layout lives in app.scss; a theme only re-skins tokens and a few surfaces.
+// Default Dark — neutral surfaces with a single blue accent.
+// Layout lives in app.scss; a theme only re-skins design tokens.
 :root[data-theme='default_dark'] {
   color-scheme: dark;
 
-  --bg: #080b12;
-  --bg-glow: radial-gradient(1100px 620px at 8% -12%, rgb(122 162 255 / 16%), transparent 60%);
-  --surface: #0f1521;
-  --surface-2: #161f2e;
-  --surface-raised: #1b2638;
-  --border: #223049;
-  --border-strong: #2e4160;
-  --text: #e8eef8;
-  --muted: #8fa0b8;
-  --accent: #7aa2ff;
-  --accent-strong: #a9c1ff;
-  --accent-contrast: #07101f;
-  --accent-gradient: linear-gradient(135deg, #7aa2ff, #a77bff);
-  --danger: #ff6b6b;
-  --success: #41d18a;
-  --warning: #f7c948;
-  --shadow: 0 24px 60px rgb(0 0 0 / 45%);
-
-  .topbar {
-    background: rgb(15 21 33 / 78%);
-    backdrop-filter: blur(14px);
-  }
-
-  .card {
-    box-shadow: 0 1px 0 rgb(255 255 255 / 4%) inset;
-  }
-
-  .brand__mark {
-    box-shadow: 0 8px 24px rgb(122 162 255 / 35%);
-  }
+  --bg: #0a0c10;
+  --bg-glow: radial-gradient(900px 520px at 8% -12%, rgb(91 140 255 / 10%), transparent 62%);
+  --surface: #11151b;
+  --surface-2: #171c24;
+  --surface-raised: #1c222c;
+  --border: #242c38;
+  --border-strong: #344050;
+  --text: #e7ecf4;
+  --muted: #8b97a9;
+  --accent: #ff6a3d;
+  --accent-strong: #ff8a63;
+  --accent-soft: rgb(255 106 61 / 14%);
+  --accent-contrast: #1a0904;
+  --accent-gradient: linear-gradient(180deg, #ff8357, #e8481f);
+  --danger: #ff7373;
+  --success: #46d39a;
+  --warning: #f2c14e;
+  --shadow: 0 18px 40px rgb(0 0 0 / 28%);
 }

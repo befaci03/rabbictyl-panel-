@@ -31,7 +31,9 @@ public static class DependencyInjection
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPasswordHasher>(_ => new BcryptPasswordHasher(options.Security.BcryptWorkFactor));
-        services.AddSingleton<IAdminSeeder, AdminSeeder>();
+        // Depends on the scoped stores (and the relational DbContext), so it must
+        // live in the same scope the startup initializer creates.
+        services.AddScoped<IAdminSeeder, AdminSeeder>();
 
         services.AddHttpClient("pats", client => client.Timeout = TimeSpan.FromSeconds(30));
         services.AddSingleton<IPatsClientFactory, PatsClientFactory>();
@@ -83,8 +85,13 @@ public static class DependencyInjection
             options.Themes.Directory,
             provider.GetRequiredService<ILogger<FileSystemThemeCatalog>>()));
 
+        services.AddSingleton<IAddonState>(provider => new FileSystemAddonState(
+            Path.Combine(options.Storage.Directory, "addons.json"),
+            provider.GetRequiredService<ILogger<FileSystemAddonState>>()));
+
         services.AddSingleton<IAddonCatalog>(provider => new FileSystemAddonCatalog(
             options.Addons.Directory,
+            provider.GetRequiredService<IAddonState>(),
             provider.GetRequiredService<ILogger<FileSystemAddonCatalog>>()));
 
         services.AddSingleton<IThemeState>(provider => new FileSystemThemeState(

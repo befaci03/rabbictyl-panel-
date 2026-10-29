@@ -8,11 +8,16 @@ namespace RabbiCtyl.Infrastructure.Extensions;
 public sealed class FileSystemAddonCatalog : IAddonCatalog
 {
     private readonly string _rootDirectory;
+    private readonly IAddonState _state;
     private readonly ILogger<FileSystemAddonCatalog> _logger;
 
-    public FileSystemAddonCatalog(string rootDirectory, ILogger<FileSystemAddonCatalog> logger)
+    public FileSystemAddonCatalog(
+        string rootDirectory,
+        IAddonState state,
+        ILogger<FileSystemAddonCatalog> logger)
     {
         _rootDirectory = rootDirectory;
+        _state = state;
         _logger = logger;
     }
 
@@ -101,6 +106,12 @@ public sealed class FileSystemAddonCatalog : IAddonCatalog
             if (string.IsNullOrWhiteSpace(manifest.Name))
             {
                 throw new InvalidDataException("The manifest name must not be empty.");
+            }
+
+            // An administrator override always wins over the shipped manifest.
+            if (_state.GetOverride(manifest.Id) is { } enabled)
+            {
+                manifest.Enabled = enabled;
             }
 
             var scripts = BuildScripts(manifest, directory);

@@ -1,0 +1,290 @@
+@model ServerPageViewModel
+@{
+    ViewData["Title"] = Model.Server.Name;
+    var server = Model.Server;
+    var section = Model.Section;
+    var shortId = server.Uuid.ToString("N")[..8];
+    var sftpUser = $"{(string.IsNullOrWhiteSpace(Model.OwnerUsername) ? "user" : Model.OwnerUsername)}.{shortId}";
+    var address = server.AllocationPort > 0 ? $"{server.AllocationIp}:{server.AllocationPort}" : "—";
+    var description = string.IsNullOrWhiteSpace(server.Description) ? server.Uuid.ToString() : server.Description;
+
+    string TabClass(string name) =>
+        string.Equals(section, name, StringComparison.OrdinalIgnoreCase)
+            ? "server-tab is-active"
+            : "server-tab";
+}
+
+<section class="page server-page">
+    <header class="server-hero card">
+        <div class="server-hero__identity">
+            <span class="server-hero__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <rect x="3" y="4" width="18" height="6" rx="2" />
+                    <rect x="3" y="14" width="18" height="6" rx="2" />
+                    <path d="M7 7h.01M7 17h.01" />
+                </svg>
+            </span>
+            <div class="server-hero__copy">
+                <span class="server-hero__eyebrow">
+                    <a asp-controller="Home" asp-action="Index">@L["nav.dashboard"]</a>
+                    <span>/</span>
+                    <span>@(Model.Node?.Name ?? L["home.node"])</span>
+                </span>
+                <h1 class="server-hero__title">@server.Name</h1>
+                <p class="server-hero__description">@description</p>
+                <div class="server-hero__badges">
+                    <span class="badge badge--@server.Status.ToString().ToLowerInvariant()">@server.Status</span>
+                    <span class="badge">@address</span>
+                    @if (Model.State is not null)
+                    {
+                        <span class="badge badge--running">@Model.State.State</span>
+                    }
+                    @if (server.Suspended)
+                    {
+                        <span class="badge badge--suspended">@L["server.suspended"]</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="server-hero__side">
+            @if (!server.Suspended)
+            {
+                <div class="server-power" data-server-power data-server-uuid="@server.Uuid">
+                    <button type="button" class="button button--primary button--sm" data-power-action="start">@L["server.power.start"]</button>
+                    <button type="button" class="button button--ghost button--sm" data-power-action="restart">@L["server.power.restart"]</button>
+                    <button type="button" class="button button--ghost button--sm" data-power-action="stop">@L["server.power.stop"]</button>
+                    <button type="button" class="button button--ghost button--sm server-power__danger" data-power-action="kill">@L["server.power.kill"]</button>
+                </div>
+            }
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.DaemonError))
+    {
+        <div class="alert alert--danger" role="alert">@Model.DaemonError</div>
+    }
+
+    <nav class="server-tabs" aria-label="@L["server.sections"]">
+        <a class="@TabClass("console")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="console">@L["nav.console"]</a>
+        <a class="@TabClass("files")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="files">@L["nav.files"]</a>
+        <a class="@TabClass("backups")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="backups">@L["nav.backups"]</a>
+        <a class="@TabClass("schedules")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="schedules">@L["nav.schedules"]</a>
+        <a class="@TabClass("users")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="users">@L["nav.users"]</a>
+        <a class="@TabClass("startup")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="startup">@L["nav.startup"]</a>
+        <a class="@TabClass("settings")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="settings">@L["nav.settings"]</a>
+    </nav>
+
+    @if (section == "files")
+    {
+        <section class="card file-browser"
+                 data-file-browser
+                 data-server-uuid="@server.Uuid"
+                 data-loading-label="@L["server.files.loading"]"
+                 data-empty-label="@L["server.files.empty"]"
+                 data-error-label="@L["server.files.error"]">
+            <div class="file-browser__bar">
+                <button type="button" class="button button--ghost button--sm" data-file-up>@L["server.files.up"]</button>
+                <code class="file-browser__path" data-file-path>/</code>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>@L["server.files.name"]</th>
+                            <th class="table__number">@L["server.files.size"]</th>
+                            <th>@L["server.files.modified"]</th>
+                        </tr>
+                    </thead>
+                    <tbody data-file-rows>
+                        <tr><td colspan="3" class="table__secondary">@L["server.files.loading"]</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="form__hint file-browser__hint">@L["server.files.hint"]</p>
+        </section>
+    }
+    else if (section == "backups")
+    {
+        <div class="card empty">
+            <span class="empty__icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                    <path d="M4 7.5h16v11H4zM4 7.5 6 4h12l2 3.5" />
+                    <path d="M9 12h6" />
+                </svg>
+            </span>
+            <p class="empty__title">@L["server.backups.title"]</p>
+            <p class="empty__hint">@L["server.backups.hint"]</p>
+        </div>
+    }
+    else if (section == "schedules")
+    {
+        <div class="card empty">
+            <span class="empty__icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                    <circle cx="12" cy="12" r="8.5" />
+                    <path d="M12 7.5V12l3 2" />
+                </svg>
+            </span>
+            <p class="empty__title">@L["server.schedules.title"]</p>
+            <p class="empty__hint">@L["server.schedules.hint"]</p>
+        </div>
+    }
+    else if (section == "users")
+    {
+        <section class="card">
+            <div class="card__header">
+                <div>
+                    <h2 class="card__title">@L["server.users.title"]</h2>
+                    <p class="card__subtitle">@L["server.users.hint"]</p>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>@L["home.owner"]</th>
+                            <th>@L["server.users.username"]</th>
+                            <th>@L["server.users.role"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="table__primary">@Model.OwnerName</td>
+                            <td>@sftpUser</td>
+                            <td><span class="badge badge--running">@L["server.users.owner"]</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+    else if (section == "startup")
+    {
+        <div class="server-layout">
+            <section class="card">
+                <div class="card__header">
+                    <div>
+                        <h2 class="card__title">@L["server.startup.title"]</h2>
+                        <p class="card__subtitle">@L["server.startup.hint"]</p>
+                    </div>
+                </div>
+                <dl class="detail-list">
+                    <div>
+                        <dt>@L["server.startup.command"]</dt>
+                        <dd><code>@(string.IsNullOrWhiteSpace(server.StartupCommand) ? "—" : server.StartupCommand)</code></dd>
+                    </div>
+                    <div>
+                        <dt>@L["server.startup.image"]</dt>
+                        <dd><code>@(string.IsNullOrWhiteSpace(server.Image) ? "—" : server.Image)</code></dd>
+                    </div>
+                </dl>
+            </section>
+            <aside class="stack">
+                <section class="card">
+                    <div class="card__header">
+                        <h2 class="card__title">@L["server.startup.environment"]</h2>
+                    </div>
+                    @if (Model.Environment.Count == 0)
+                    {
+                        <p class="form__hint">@L["server.startup.noEnvironment"]</p>
+                    }
+                    else
+                    {
+                        <dl class="detail-list">
+                            @foreach (var variable in Model.Environment.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+                            {
+                                <div>
+                                    <dt><code>@variable.Key</code></dt>
+                                    <dd>@variable.Value</dd>
+                                </div>
+                            }
+                        </dl>
+                    }
+                </section>
+            </aside>
+        </div>
+    }
+    else if (section == "settings")
+    {
+        <div class="server-layout">
+            <section class="card">
+                <div class="card__header">
+                    <div>
+                        <h2 class="card__title">@L["server.settings.title"]</h2>
+                        <p class="card__subtitle">@L["server.settings.hint"]</p>
+                    </div>
+                </div>
+                <dl class="detail-list">
+                    <div><dt>UUID</dt><dd><code>@server.Uuid</code></dd></div>
+                    <div><dt>@L["home.node"]</dt><dd>@(Model.Node?.Name ?? "—")</dd></div>
+                    <div><dt>@L["home.owner"]</dt><dd>@Model.OwnerName</dd></div>
+                    <div><dt>@L["home.address"]</dt><dd>@address</dd></div>
+                    <div><dt>@L["home.memory"]</dt><dd>@server.MemoryLimitMb MB</dd></div>
+                    <div><dt>@L["home.disk"]</dt><dd>@server.DiskLimitMb MB</dd></div>
+                    <div><dt>@L["server.settings.cpu"]</dt><dd>@server.CpuLimitPercent%</dd></div>
+                </dl>
+            </section>
+            <aside class="stack">
+                <section class="card">
+                    <div class="card__header">
+                        <h2 class="card__title">@L["server.sftp.title"]</h2>
+                    </div>
+                    <dl class="detail-list">
+                        <div><dt>@L["server.sftp.host"]</dt><dd>@(Model.Node?.Fqdn ?? "—")</dd></div>
+                        <div><dt>@L["server.sftp.port"]</dt><dd>@(Model.Node?.DaemonSftpPort ?? 0)</dd></div>
+                        <div><dt>@L["server.sftp.username"]</dt><dd><code>@sftpUser</code></dd></div>
+                    </dl>
+                    <p class="form__hint">@L["server.sftp.hint"]</p>
+                </section>
+            </aside>
+        </div>
+    }
+    else
+    {
+        <div class="server-layout">
+            <section class="card server-console-card">
+                <div class="server-console__header">
+                    <div>
+                        <h2 class="card__title">@L["server.console.title"]</h2>
+                        <p class="card__subtitle">@L["server.console.hint"]</p>
+                    </div>
+                    @if (Model.State is not null)
+                    {
+                        <span class="badge badge--running">@Model.State.State</span>
+                    }
+                </div>
+                <pre class="server-console" data-server-console>@(string.IsNullOrWhiteSpace(Model.Logs) ? L["server.console.empty"] : Model.Logs)</pre>
+                <form class="server-command" data-server-command data-server-uuid="@server.Uuid">
+                    <input class="form__input" name="command" placeholder="@L["server.console.placeholder"]" autocomplete="off" maxlength="512" />
+                    <button type="submit" class="button button--primary">@L["server.console.send"]</button>
+                </form>
+            </section>
+
+            <aside class="stack">
+                <section class="card">
+                    <div class="card__header">
+                        <h2 class="card__title">@L["server.details"]</h2>
+                    </div>
+                    <dl class="detail-list">
+                        <div><dt>@L["home.node"]</dt><dd>@(Model.Node?.Name ?? "—")</dd></div>
+                        <div><dt>@L["home.owner"]</dt><dd>@Model.OwnerName</dd></div>
+                        <div><dt>@L["home.address"]</dt><dd>@address</dd></div>
+                        <div><dt>@L["home.memory"]</dt><dd>@server.MemoryLimitMb MB</dd></div>
+                        <div><dt>@L["home.disk"]</dt><dd>@server.DiskLimitMb MB</dd></div>
+                    </dl>
+                </section>
+                <section class="card">
+                    <div class="card__header">
+                        <h2 class="card__title">@L["server.sftp.title"]</h2>
+                    </div>
+                    <dl class="detail-list">
+                        <div><dt>@L["server.sftp.host"]</dt><dd>@(Model.Node?.Fqdn ?? "—")</dd></div>
+                        <div><dt>@L["server.sftp.port"]</dt><dd>@(Model.Node?.DaemonSftpPort ?? 0)</dd></div>
+                        <div><dt>@L["server.sftp.username"]</dt><dd><code>@sftpUser</code></dd></div>
+                    </dl>
+                </section>
+            </aside>
+        </div>
+    }
+</section>

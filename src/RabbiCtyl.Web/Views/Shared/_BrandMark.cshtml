@@ -1,0 +1,7 @@
+@{
+    var brandLogo = ViewData["BrandLogoUrl"] as string ?? Url.Content("~/logo.svg");
+}
+
+<span class="brand__mark" aria-hidden="true">
+    <img src="@brandLogo" alt="" />
+</span>

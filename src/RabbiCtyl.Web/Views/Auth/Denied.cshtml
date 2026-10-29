@@ -1,8 +1,10 @@
 @{
+    Layout = await ThemeLayouts.ResolveAsync(Context, auth: true);
     ViewData["Title"] = "Access denied";
 }
 <section class="auth">
     <div class="auth__panel card">
+        <partial name="_BrandMark" />
         <h1 class="auth__title">Access denied</h1>
         <p class="auth__subtitle">You do not have permission to open that page.</p>
         <a class="button button--primary button--block" asp-controller="Home" asp-action="Index">Back to dashboard</a>

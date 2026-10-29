@@ -10,31 +10,50 @@ namespace RabbiCtyl.Web.Controllers;
 [Authorize]
 public sealed class HomeController : Controller
 {
-    private readonly IUserStore _users;
     private readonly IServerStore _servers;
-    private readonly INodeStore _nodes;
+    private readonly IUserStore _users;
 
-    public HomeController(IUserStore users, IServerStore servers, INodeStore nodes)
+    public HomeController(IServerStore servers, IUserStore users)
     {
-        _users = users;
         _servers = servers;
-        _nodes = nodes;
+        _users = users;
     }
 
     [HttpGet("/")]
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(
+        string? scope = null,
+        CancellationToken cancellationToken = default)
     {
-        var userId = User.GetUserId();
-        var servers = userId is null
-            ? Array.Empty<Server>()
-            : await _servers.ListForUserAsync(userId.Value, cancellationToken);
+        if (User.IsBootstrapAdmin())
+        {
+            return RedirectToAction("Setup", "Auth");
+        }
+
+        var showAllServers = User.IsInRole("admin")
+            && string.Equals(scope, "all", StringComparison.OrdinalIgnoreCase);
+
+        IReadOnlyList<Server> servers;
+        var ownerNames = new Dictionary<Guid, string>();
+
+        if (showAllServers)
+        {
+            servers = await _servers.ListAsync(cancellationToken);
+            ownerNames = (await _users.ListAsync(cancellationToken))
+                .ToDictionary(user => user.Id, user => user.DisplayName);
+        }
+        else
+        {
+            var userId = User.GetUserId();
+            servers = userId is null
+                ? Array.Empty<Server>()
+                : await _servers.ListForUserAsync(userId.Value, cancellationToken);
+        }
 
         var model = new DashboardViewModel
         {
-            ServerCount = servers.Count,
-            NodeCount = await _nodes.CountAsync(cancellationToken),
-            UserCount = await _users.CountAsync(cancellationToken),
             Servers = servers,
+            ShowAllServers = showAllServers,
+            OwnerNames = ownerNames,
         };
 
         return View(model);

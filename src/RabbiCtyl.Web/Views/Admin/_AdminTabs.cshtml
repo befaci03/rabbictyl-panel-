@@ -1,0 +1,14 @@
+@{
+    var current = ViewContext.RouteData.Values["action"]?.ToString();
+}
+
+<nav class="tabs" aria-label="@L["admin.eyebrow"]">
+    <a class="tab @(current == "Nodes" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Nodes">@L["admin.nodes"]</a>
+    <a class="tab @(current == "Servers" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Servers">@L["admin.servers"]</a>
+    <a class="tab @(current == "Users" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Users">@L["admin.users"]</a>
+    <a class="tab @(current == "Addons" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Addons">@L["admin.addons"]</a>
+</nav>

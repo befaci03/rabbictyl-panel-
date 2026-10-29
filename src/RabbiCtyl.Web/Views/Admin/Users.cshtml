@@ -1,0 +1,125 @@
+@model IReadOnlyList<User>
+@{
+    ViewData["Title"] = "Users";
+}
+
+<section class="page">
+    <header class="page__header">
+        <div>
+            <span class="eyebrow">@L["admin.eyebrow"]</span>
+            <h1 class="page__title">@L["admin.users"]</h1>
+            <p class="page__subtitle">Accounts with access to this panel.</p>
+        </div>
+        <span class="pill pill--muted">@Model.Count</span>
+    </header>
+
+    <partial name="_AdminTabs" />
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert--success" role="status">@success</div>
+    }
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert--danger" role="alert">@error</div>
+    }
+
+    <details class="card admin-create" @(Model.Count == 0 ? "open" : null)>
+        <summary class="admin-create__summary">
+            <span>
+                <strong>Create user</strong>
+                <span class="admin-create__hint">Add an account without going through the application API.</span>
+            </span>
+            <span class="button button--primary button--sm">New user</span>
+        </summary>
+        <div class="admin-create__body">
+            <form method="post" asp-controller="Admin" asp-action="CreateUser" class="form">
+                <div class="admin-create__grid">
+                    <div class="form__group">
+                        <label class="form__label" for="user-first">First name</label>
+                        <input class="form__input" id="user-first" name="FirstName" required maxlength="64" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="user-last">Last name</label>
+                        <input class="form__input" id="user-last" name="LastName" required maxlength="64" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="user-username">Username</label>
+                        <input class="form__input" id="user-username" name="Username" required minlength="3" maxlength="32" autocomplete="off" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="user-email">Email</label>
+                        <input class="form__input" id="user-email" name="Email" type="email" required maxlength="255" autocomplete="off" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="user-password">Password</label>
+                        <input class="form__input" id="user-password" name="Password" type="password" required minlength="8" maxlength="128" autocomplete="new-password" />
+                    </div>
+                </div>
+
+                <div class="admin-create__checks">
+                    <label class="form__check">
+                        <input type="checkbox" name="IsRootAdmin" value="true" />
+                        Grant administrator access
+                    </label>
+                </div>
+
+                <div class="admin-create__actions">
+                    <button type="submit" class="button button--primary">Create user</button>
+                </div>
+            </form>
+        </div>
+    </details>
+
+    <section class="card card--flush">
+        @if (Model.Count == 0)
+        {
+            <div class="empty">
+                <p class="empty__title">No users yet</p>
+                <p class="empty__hint">Create the first account above.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="table__user" data-avatar-user="@user.Username">
+                                    <span class="table__primary">@user.DisplayName</span>
+                                </span>
+                            </td>
+                            <td>@user.Username</td>
+                            <td>@user.Email</td>
+                            <td>
+                                @if (user.IsRootAdmin)
+                                {
+                                    <span class="badge badge--running">Administrator</span>
+                                }
+                                else
+                                {
+                                    <span class="badge">User</span>
+                                }
+                            </td>
+                            <td>@user.CreatedAt.ToString("yyyy-MM-dd")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</section>

@@ -26,6 +26,38 @@ The panel listens on <http://localhost:8080>. `config/panel.toml` is resolved fr
 content root; set `RABBICTYL_CONFIG` to point somewhere else. Every option also has an
 environment override (see `src/RabbiCtyl.Configuration/PanelEnvironmentOverrides.cs`).
 
+## First run: bootstrap administrator
+
+On an empty user table the panel creates a temporary administrator from the `[bootstrap]`
+section in `config/panel.toml`. Set the password with the environment variable rather than
+writing it to disk:
+
+```bash
+export RABBICTYL_BOOTSTRAP_ADMIN_PASSWORD='change-me-please'
+```
+
+The defaults are username `admin` and email `admin@example.com`; change them in
+`config/panel.toml` if you want different bootstrap credentials.
+
+1. Start the panel and sign in with the bootstrap username (or email) and password.
+2. Instead of the dashboard, the panel opens `/auth/setup` and asks you to create your own
+   administrator account (name, username, email and password).
+3. Submitting the form creates that account, deletes the bootstrap administrator, signs you
+   out and returns you to the login page.
+4. Sign in with the credentials you just created. The bootstrap account no longer exists.
+
+The bootstrap username and email cannot be reused for the new account, so the temporary
+account is always fully removed. If the user table is not empty, no bootstrap account is
+created and this flow never runs.
+
+## Panel areas
+
+- `/` — dashboard with the servers assigned to your account
+- `/themes` — installed themes; administrators can activate a theme
+- `/admin/nodes`, `/admin/servers`, `/admin/users`, `/admin/addons` — administrator-only
+  listings, separated from the client dashboard the same way Pterodactyl separates its
+  admin area. Addons are visible to administrators only.
+
 ## Checks
 
 ```bash
@@ -72,6 +104,18 @@ themes/my_theme/
 so `styles/theme.scss` is linked as `/themes/my_theme/styles/theme.css`. Assets are
 addressed by id and served from `/api/themes/{id}/assets/{assetId}`, which keeps
 templates independent of file paths.
+
+A theme can select a different shell through its manifest. `"layout": "pterodactyl"`
+uses the Pterodactyl-style main and auth layouts; omit the field to use the default
+layouts. The bundled `pterodactyl_blue` theme uses this option.
+
+## Localization
+
+UI strings live in `src/RabbiCtyl.Web/Localization/<culture>.json` (`en` and `fr` ship
+by default). The panel negotiates the culture from the query string, the
+`.AspNetCore.Culture` cookie or the browser's `Accept-Language` header; the language
+selector in the top bar persists the choice in the cookie. Add another culture by
+adding a JSON file and including it in the supported cultures in `Program.cs`.
 
 API:
 

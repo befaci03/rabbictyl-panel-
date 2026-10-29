@@ -47,4 +47,7 @@ public sealed class MongoUserStore : IUserStore
         user.UpdatedAt = DateTimeOffset.UtcNow;
         await _users.ReplaceOneAsync(item => item.Id == user.Id, user, cancellationToken: cancellationToken);
     }
+
+    public Task DeleteAsync(User user, CancellationToken cancellationToken = default) =>
+        _users.DeleteOneAsync(item => item.Id == user.Id, cancellationToken);
 }

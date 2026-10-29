@@ -1,72 +1,95 @@
 @model DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard";
+    var isAdmin = User.IsInRole("admin");
 }
+
 <section class="page">
     <header class="page__header">
         <div>
-            <h1 class="page__title">Dashboard</h1>
-            <p class="page__subtitle">An overview of your panel.</p>
+            <h1 class="page__title">@L["home.title"]</h1>
+            <p class="page__subtitle">@L["home.subtitle"]</p>
+        </div>
+        <div class="page__meta">
+            @if (isAdmin)
+            {
+                <div class="segmented" role="group" aria-label="Server scope">
+                    <a class="segmented__item @(Model.ShowAllServers ? string.Empty : "is-active")"
+                       asp-controller="Home" asp-action="Index">@L["home.mine"]</a>
+                    <a class="segmented__item @(Model.ShowAllServers ? "is-active" : string.Empty)"
+                       asp-controller="Home" asp-action="Index" asp-route-scope="all">@L["home.all"]</a>
+                </div>
+            }
+            <span class="pill pill--muted">@Model.Servers.Count</span>
         </div>
     </header>
 
-    <div class="stats">
-        <article class="stat card">
-            <span class="stat__label">Servers</span>
-            <span class="stat__value">@Model.ServerCount</span>
-            <span class="stat__hint">owned by you</span>
-        </article>
-        <article class="stat card">
-            <span class="stat__label">Nodes</span>
-            <span class="stat__value">@Model.NodeCount</span>
-            <span class="stat__hint">registered</span>
-        </article>
-        <article class="stat card">
-            <span class="stat__label">Users</span>
-            <span class="stat__value">@Model.UserCount</span>
-            <span class="stat__hint">accounts</span>
-        </article>
-    </div>
+    @if (Model.Servers.Count == 0)
+    {
+        <div class="card empty">
+            <span class="empty__icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="6" rx="2" />
+                    <rect x="3" y="14" width="18" height="6" rx="2" />
+                    <path d="M7 7h.01M7 17h.01" />
+                </svg>
+            </span>
+            <p class="empty__title">@L["home.empty.title"]</p>
+            <p class="empty__hint">@L["home.empty.hint"]</p>
+        </div>
+    }
+    else
+    {
+        <div class="server-grid">
+            @foreach (var server in Model.Servers)
+            {
+                <a class="server-card card" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid">
+                    <div class="server-card__top">
+                        <span class="server-card__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                                <rect x="3" y="4" width="18" height="6" rx="2" />
+                                <rect x="3" y="14" width="18" height="6" rx="2" />
+                                <path d="M7 7h.01M7 17h.01" />
+                            </svg>
+                        </span>
+                        <span class="badge badge--@server.Status.ToString().ToLowerInvariant()">@server.Status</span>
+                    </div>
 
-    <section class="card">
-        <header class="card__header">
-            <h2 class="card__title">Your servers</h2>
-        </header>
+                    <div>
+                        <h2 class="server-card__name">@server.Name</h2>
+                        <p class="server-card__description">
+                            @(string.IsNullOrWhiteSpace(server.Description) ? "No description" : server.Description)
+                        </p>
+                    </div>
 
-        @if (Model.Servers.Count == 0)
-        {
-            <div class="empty">
-                <p>You do not own any servers yet.</p>
-                <p class="empty__hint">Once an administrator creates one, it will show up here.</p>
-            </div>
-        }
-        else
-        {
-            <div class="table-wrap">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Node</th>
-                            <th>Status</th>
-                            <th>Memory</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var server in Model.Servers)
-                    {
-                        <tr>
-                            <td>@server.Name</td>
-                            <td>@(server.Node?.Name ?? "—")</td>
-                            <td>
-                                <span class="badge badge--@server.Status.ToString().ToLowerInvariant()">@server.Status</span>
-                            </td>
-                            <td>@server.MemoryLimitMb MB</td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
-        }
-    </section>
+                    <dl class="server-card__meta">
+                        @if (Model.ShowAllServers)
+                        {
+                            <div>
+                                <dt>@L["home.owner"]</dt>
+                                <dd>@(Model.OwnerNames.TryGetValue(server.OwnerId, out var ownerName) ? ownerName : L["home.unknownUser"])</dd>
+                            </div>
+                        }
+                        <div>
+                            <dt>@L["home.node"]</dt>
+                            <dd>@(server.Node?.Name ?? "—")</dd>
+                        </div>
+                        <div>
+                            <dt>@L["home.address"]</dt>
+                            <dd>@(server.AllocationPort > 0 ? server.AllocationIp + ":" + server.AllocationPort : "—")</dd>
+                        </div>
+                        <div>
+                            <dt>@L["home.memory"]</dt>
+                            <dd>@server.MemoryLimitMb MB</dd>
+                        </div>
+                        <div>
+                            <dt>@L["home.disk"]</dt>
+                            <dd>@server.DiskLimitMb MB</dd>
+                        </div>
+                    </dl>
+                    <span class="server-card__open">@L["server.manage"] &rarr;</span>
+                </a>
+            }
+        </div>
+    }
 </section>

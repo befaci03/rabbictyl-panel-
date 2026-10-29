@@ -23,6 +23,13 @@ public sealed class ThemeManifest
     [JsonPropertyName("author")]
     public string? Author { get; set; }
 
+    /// <summary>
+    /// Optional built-in layout family. "pterodactyl" selects the panel's
+    /// Pterodactyl-style main and auth layouts; null uses the default layouts.
+    /// </summary>
+    [JsonPropertyName("layout")]
+    public string? Layout { get; set; }
+
     [JsonPropertyName("styles")]
     public List<string> Styles { get; set; } = [];
 

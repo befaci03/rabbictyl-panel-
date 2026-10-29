@@ -7,6 +7,7 @@ public sealed class ExtensionCatalogTests : IDisposable
 {
     private readonly string _root;
     private readonly FileSystemThemeCatalog _themes;
+    private readonly FileSystemAddonState _addonState;
     private readonly FileSystemAddonCatalog _addons;
 
     public ExtensionCatalogTests()
@@ -17,8 +18,13 @@ public sealed class ExtensionCatalogTests : IDisposable
             Path.Combine(_root, "themes"),
             NullLogger<FileSystemThemeCatalog>.Instance);
 
+        _addonState = new FileSystemAddonState(
+            Path.Combine(_root, "storage", "addons.json"),
+            NullLogger<FileSystemAddonState>.Instance);
+
         _addons = new FileSystemAddonCatalog(
             Path.Combine(_root, "addons"),
+            _addonState,
             NullLogger<FileSystemAddonCatalog>.Instance);
     }
 
@@ -114,6 +120,27 @@ public sealed class ExtensionCatalogTests : IDisposable
         Assert.Null(addon.AssemblyPath);
         Assert.Equal(new[] { "/addons/greeter/scripts/main.js" }, addon.ScriptUrls);
         Assert.Equal("/api/addons/greeter/assets/icon", addon.AssetUrls["icon"]);
+    }
+
+    [Fact]
+    public async Task Addon_enabled_state_can_be_overridden_by_the_panel()
+    {
+        WriteFile("addons/greeter/manifest.json", """
+            {
+              "id": "greeter",
+              "name": "Greeter"
+            }
+            """);
+
+        await _addonState.SetEnabledAsync("greeter", false);
+
+        var addon = Assert.Single(await _addons.ListAsync());
+        Assert.False(addon.IsEnabled);
+        Assert.Empty(await _addons.ListAsync(enabledOnly: true));
+
+        await _addonState.SetEnabledAsync("greeter", true);
+
+        Assert.True(Assert.Single(await _addons.ListAsync(enabledOnly: true)).IsEnabled);
     }
 
     [Fact]

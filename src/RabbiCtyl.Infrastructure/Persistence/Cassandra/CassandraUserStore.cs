@@ -109,6 +109,24 @@ public sealed class CassandraUserStore : CassandraStoreBase, IUserStore
         await Session.ExecuteAsync(batch);
     }
 
+    public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)
+    {
+        var existing = await FindByIdAsync(user.Id, cancellationToken) ?? user;
+
+        var batch = new BatchStatement().SetBatchType(BatchType.Logged)
+            .Add(new SimpleStatement(
+                $"DELETE FROM {Table("users")} WHERE id = ?",
+                user.Id))
+            .Add(new SimpleStatement(
+                $"DELETE FROM {Table("users_by_login")} WHERE login = ?",
+                EmailKey(existing.Email)))
+            .Add(new SimpleStatement(
+                $"DELETE FROM {Table("users_by_login")} WHERE login = ?",
+                UsernameKey(existing.Username)));
+
+        await Session.ExecuteAsync(batch);
+    }
+
     private static string EmailKey(string email) => "email:" + email.Trim().ToLowerInvariant();
 
     private static string UsernameKey(string username) => "username:" + username.Trim().ToLowerInvariant();

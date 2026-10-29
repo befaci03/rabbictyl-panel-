@@ -2,8 +2,9 @@
   "id": "pterodactyl_blue",
   "name": "Pterodactyl Blue",
   "version": "1.0.0",
-  "description": "A deep sea-blue theme with teal accents, inspired by Pterodactyl's palette.",
+  "description": "The Pterodactyl panel palette: slate surfaces, blue accents and compact controls.",
   "author": "RabbiCtyl",
+  "layout": "pterodactyl",
   "styles": [
     "styles/theme.scss",
     "styles/animations.css"

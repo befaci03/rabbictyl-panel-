@@ -1,0 +1,87 @@
+@model SetupViewModel
+@{
+    Layout = await ThemeLayouts.ResolveAsync(Context, auth: true);
+    ViewData["Title"] = "Create your account";
+}
+
+<section class="auth">
+    <div class="auth__shell auth__shell--setup">
+        <aside class="auth__aside">
+            <div class="auth__aside-top">
+                <partial name="_BrandMark" />
+                <span class="brand__text">
+                    <span class="brand__name">RabbiCtyl</span>
+                    <span class="brand__sub">Game panel</span>
+                </span>
+            </div>
+
+            <div class="auth__aside-copy">
+                <span class="eyebrow">First run</span>
+                <h1>Finish setting up your panel.</h1>
+                <p>The bootstrap administrator is temporary. Create the account you will actually use.</p>
+            </div>
+
+            <ol class="setup-steps">
+                <li class="is-current"><span>1</span>Create your account</li>
+                <li><span>2</span>Bootstrap account is deleted</li>
+                <li><span>3</span>Sign in with your new credentials</li>
+            </ol>
+
+            <span class="auth__aside-foot">This only happens once.</span>
+        </aside>
+
+        <div class="auth__form-side">
+            <div class="auth__form-inner auth__form-inner--wide">
+                <span class="eyebrow">Administrator</span>
+                <h2 class="auth__title">Create your account</h2>
+                <p class="auth__subtitle">This replaces the bootstrap admin and signs you out when it is done.</p>
+
+                <form method="post" asp-controller="Auth" asp-action="Setup" class="form">
+                    <div asp-validation-summary="ModelOnly" class="alert alert--danger"></div>
+
+                    <div class="form__row">
+                        <div class="form__group">
+                            <label asp-for="FirstName" class="form__label"></label>
+                            <input asp-for="FirstName" class="form__input" autocomplete="given-name" autofocus />
+                            <span asp-validation-for="FirstName" class="form__error"></span>
+                        </div>
+                        <div class="form__group">
+                            <label asp-for="LastName" class="form__label"></label>
+                            <input asp-for="LastName" class="form__input" autocomplete="family-name" />
+                            <span asp-validation-for="LastName" class="form__error"></span>
+                        </div>
+                    </div>
+
+                    <div class="form__group">
+                        <label asp-for="Username" class="form__label"></label>
+                        <input asp-for="Username" class="form__input" autocomplete="username" />
+                        <span asp-validation-for="Username" class="form__error"></span>
+                    </div>
+
+                    <div class="form__group">
+                        <label asp-for="Email" class="form__label"></label>
+                        <input asp-for="Email" class="form__input" autocomplete="email" />
+                        <span asp-validation-for="Email" class="form__error"></span>
+                    </div>
+
+                    <div class="form__row">
+                        <div class="form__group">
+                            <label asp-for="Password" class="form__label"></label>
+                            <input asp-for="Password" class="form__input" autocomplete="new-password" />
+                            <span asp-validation-for="Password" class="form__error"></span>
+                        </div>
+                        <div class="form__group">
+                            <label asp-for="ConfirmPassword" class="form__label"></label>
+                            <input asp-for="ConfirmPassword" class="form__input" autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmPassword" class="form__error"></span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="button button--primary button--block">
+                        Create account &amp; sign out
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

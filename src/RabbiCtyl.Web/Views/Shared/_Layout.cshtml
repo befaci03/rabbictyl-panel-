@@ -2,6 +2,7 @@
 @inject IThemeCatalog ThemeCatalog
 @inject IAddonCatalog AddonCatalog
 @inject IAntiforgery Antiforgery
+@inject PanelOptions PanelOptions
 @{
     var authenticated = User.Identity?.IsAuthenticated == true;
     var activeTheme = await ThemeCatalog.FindAsync(ThemeState.ActiveThemeId);
@@ -9,22 +10,28 @@
         ? await AddonCatalog.ListAsync(enabledOnly: true)
         : Array.Empty<AddonDescriptor>();
     var csrfToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
-    var title = ViewData["Title"] as string;
+    var title = ViewData["Title"] as string ?? "Dashboard";
+    var displayName = authenticated ? User.GetDisplayName() : string.Empty;
+    var isAdmin = authenticated && User.IsInRole("admin");
     var logoUrl = activeTheme is not null && activeTheme.AssetUrls.TryGetValue("logo", out var themeLogo)
         ? themeLogo
         : null;
+    var environmentLabel = string.Equals(
+        PanelOptions.App.Environment,
+        "Development",
+        StringComparison.OrdinalIgnoreCase)
+        ? L["env.development"]
+        : PanelOptions.App.Environment;
 }
 <!DOCTYPE html>
-<html lang="en" data-theme="@(activeTheme?.Id ?? "default_dark")">
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="@(activeTheme?.Id ?? "default_dark")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="@csrfToken" />
-    <title>@(title is null ? "RabbiCtyl" : $"{title} · RabbiCtyl")</title>
-    @if (logoUrl is not null)
-    {
-        <link rel="icon" href="@logoUrl" />
-    }
+    <meta name="theme-color" content="#0a0c10" />
+    <title>@title · RabbiCtyl</title>
+    <link rel="icon" href="@(logoUrl ?? Url.Content("~/logo.svg"))" />
     <link rel="stylesheet" href="~/assets/css/app.css" asp-append-version="true" />
     @if (activeTheme is not null)
     {
@@ -37,37 +44,68 @@
 <body data-authenticated="@(authenticated ? "true" : "false")">
 @if (authenticated)
 {
-    <div class="app-shell">
-        <aside class="sidebar">                <a class="brand" asp-controller="Home" asp-action="Index">
-                    <span class="brand__mark">
-                        @if (logoUrl is not null)
-                        {
-                            <img src="@logoUrl" alt="" width="28" height="28" />
-                        }
-                        else
-                        {
-                            <span>R</span>
-                        }
+    <div class="app-shell" id="app-shell">
+        <aside class="sidebar" id="sidebar">
+            <a class="brand" asp-controller="Home" asp-action="Index">
+                <partial name="_BrandMark" />
+                <span class="brand__text">
+                    <span class="brand__name">RabbiCtyl</span>
+                    <span class="brand__sub">@L["brand.subtitle"]</span>
+                </span>
+            </a>
+
+            <div class="sidebar__scroll">
+                <partial name="_SidebarNav" />
+            </div>
+
+            <div class="sidebar__footer">
+                <div class="user-chip">
+                    <span class="user-chip__meta">
+                        <span class="user-chip__name">@displayName</span>
+                        <span class="user-chip__role">@(isAdmin ? L["role.admin"] : L["role.member"])</span>
                     </span>
-                    <span class="brand__text">RabbiCtyl</span>
-                </a>
-            <nav class="nav">
-                <a class="nav__link nav__link--active" asp-controller="Home" asp-action="Index">Dashboard</a>
-                <span class="nav__link nav__link--disabled">Servers</span>
-                <span class="nav__link nav__link--disabled">Nodes</span>
-                <span class="nav__link nav__link--disabled">Users</span>
-                <span class="nav__link nav__link--disabled">Themes</span>
-                <span class="nav__link nav__link--disabled">Addons</span>
-            </nav>
+                    <form method="post" asp-controller="Auth" asp-action="Logout" class="user-chip__form">
+                        <button type="submit" class="icon-button" title="@L["nav.signout"]" aria-label="@L["nav.signout"]">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                                <path d="M14 4.5h3A2.5 2.5 0 0 1 19.5 7v10a2.5 2.5 0 0 1-2.5 2.5h-3" />
+                                <path d="M10 8l4 4-4 4M14 12H4.5" />
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
         </aside>
+
+        <div class="sidebar-backdrop" data-sidebar-close aria-hidden="true"></div>
+
         <div class="app-main">
             <header class="topbar">
-                <div class="topbar__title">@title</div>
-                <div class="topbar__user">
-                    <span class="topbar__name">@User.GetDisplayName()</span>
-                    <form method="post" asp-controller="Auth" asp-action="Logout">
-                        <button type="submit" class="button button--ghost button--sm">Sign out</button>
-                    </form>
+                <div class="topbar__left">
+                    <button type="button"
+                            class="icon-button sidebar-toggle"
+                            id="sidebar-toggle"
+                            aria-controls="sidebar"
+                            aria-label="@L["nav.open"]"
+                            aria-expanded="false"
+                            title="@L["nav.open"]"
+                            data-label-collapse="@L["nav.collapse"]"
+                            data-label-expand="@L["nav.expand"]"
+                            data-label-open="@L["nav.open"]"
+                            data-label-close="@L["nav.close"]">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                            <rect x="3.5" y="4" width="17" height="16" rx="2" />
+                            <path d="M9.5 4v16M6 8h.01M6 12h.01M6 16h.01" />
+                        </svg>
+                    </button>
+                    <div class="topbar__crumb">
+                        <span>@PanelOptions.App.Name</span>
+                        <span class="topbar__slash">/</span>
+                        <strong>@title</strong>
+                    </div>
+                </div>
+                <div class="topbar__meta">
+                    <partial name="_LocaleSwitcher" />
+                    <span class="pill pill--muted">@environmentLabel</span>
                 </div>
             </header>
             <main class="content">

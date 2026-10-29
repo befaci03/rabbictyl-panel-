@@ -1,8 +1,10 @@
 @{
+    Layout = await ThemeLayouts.ResolveAsync(Context, auth: true);
     ViewData["Title"] = "Something went wrong";
 }
 <section class="auth">
     <div class="auth__panel card">
+        <partial name="_BrandMark" />
         <h1 class="auth__title">Something went wrong</h1>
         <p class="auth__subtitle">The panel hit an unexpected error. Check the logs for details.</p>
         <a class="button button--primary button--block" asp-controller="Home" asp-action="Index">Back to dashboard</a>

@@ -1,8 +1,8 @@
 {
-  "id": "example",
-  "name": "Example Addon",
+  "id": "user_avatars",
+  "name": "User Avatars",
   "version": "1.0.0",
-  "description": "Shows an addon badge and reads its icon through the addon asset API.",
+  "description": "Adds generated geometric avatars to user rows in the administration area.",
   "author": "RabbiCtyl",
   "enabled": true,
   "scripts": [

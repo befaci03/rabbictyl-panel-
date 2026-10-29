@@ -1,0 +1,46 @@
+@inject IThemeState ThemeState
+@inject IThemeCatalog ThemeCatalog
+@{
+    var activeTheme = await ThemeCatalog.FindAsync(ThemeState.ActiveThemeId);
+    var title = ViewData["Title"] as string ?? "RabbiCtyl";
+    var logoUrl = activeTheme is not null && activeTheme.AssetUrls.TryGetValue("logo", out var themeLogo)
+        ? themeLogo
+        : null;
+}
+<!DOCTYPE html>
+<html lang="en" data-theme="@(activeTheme?.Id ?? "default_dark")">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f2937" />
+    <title>@title · RabbiCtyl</title>
+    <link rel="icon" href="@(logoUrl ?? Url.Content("~/logo.svg"))" />
+    <link rel="stylesheet" href="~/assets/css/app.css" asp-append-version="true" />
+    @if (activeTheme is not null)
+    {
+        foreach (var style in activeTheme.StylesheetUrls)
+        {
+            <link rel="stylesheet" href="@style" />
+        }
+    }
+</head>
+<body class="ptero-auth-body" data-authenticated="false">
+    <main class="ptero-auth">
+        <div class="ptero-auth__brand">
+            <partial name="_BrandMark" />
+            <span>RabbiCtyl</span>
+        </div>
+        @RenderBody()
+        <p class="ptero-auth__foot">RabbiCtyl panel</p>
+    </main>
+    <script src="~/assets/js/app.js" asp-append-version="true"></script>
+    @if (activeTheme is not null)
+    {
+        foreach (var script in activeTheme.ScriptUrls)
+        {
+            <script type="module" src="@script"></script>
+        }
+    }
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
