@@ -212,4 +212,20 @@
             </div>
         }
     </section>
+
+    <section class="card">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title">Add-ons</h2>
+                <p class="card__subtitle">Reload the add-on assemblies after replacing them. This restarts the add-ons only; the panel keeps running.</p>
+            </div>
+        </div>
+
+        <form method="post" asp-controller="Admin" asp-action="ReloadAddons" class="form">
+            <div class="admin-create__actions">
+                <button type="submit" class="button button--primary">Reload add-ons</button>
+                <span class="form__hint">Running add-ons are stopped, unloaded, then started again from their manifests.</span>
+            </div>
+        </form>
+    </section>
 </section>

@@ -28,6 +28,7 @@ public sealed class AddonHost : BackgroundService
     private readonly ILogger<AddonHost> _logger;
     private readonly List<LoadedAddon> _loaded = [];
     private readonly object _gate = new();
+    private readonly SemaphoreSlim _reloadLock = new(1, 1);
 
     public AddonHost(
         IAddonCatalog catalog,
@@ -137,6 +138,44 @@ public sealed class AddonHost : BackgroundService
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Stops every running addon and starts the enabled ones again. Used by the
+    /// "Reload add-ons" button so a new build is loaded without restarting the
+    /// panel process.
+    /// </summary>
+    public async Task ReloadAsync(CancellationToken cancellationToken = default)
+    {
+        await _reloadLock.WaitAsync(cancellationToken);
+
+        try
+        {
+            await StopAddonsAsync(cancellationToken);
+
+            foreach (var addon in await _catalog.ListAsync(enabledOnly: true, cancellationToken))
+            {
+                if (addon.AssemblyPath is null)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    await StartAddonAsync(addon, cancellationToken);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Could not start addon '{Addon}'.", addon.Id);
+                }
+            }
+
+            _logger.LogInformation("Reloaded {Count} addon(s).", _loaded.Count);
+        }
+        finally
+        {
+            _reloadLock.Release();
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

@@ -92,7 +92,7 @@ ask an administrator, and nothing is sent.
 - `/` — dashboard with the servers assigned to your account
 - `/server/{uuid}` — console, files, backups, CRON, users, startup and settings for a server
 - `/account` — password, SFTP public keys and profile
-- `/themes` — installed themes; administrators can activate a theme
+- `/themes` — installed themes; every user picks the theme for their own browser (stored in `localStorage`, mirrored to a cookie so the layout matches), administrators can also set the panel default
 - `/admin/nodes`, `/admin/servers`, `/admin/users`, `/admin/games`, `/admin/addons` —
   administrator-only listings, separated from the client dashboard the same way
   Pterodactyl separates its admin area. Addons are visible to administrators only.
@@ -236,7 +236,7 @@ API:
 - `GET /api/themes` — installed themes with their resolved style, script and asset URLs
 - `GET /api/themes/{id}` — one theme
 - `GET /api/themes/{id}/assets/{assetId}` — an asset by id
-- `POST /api/themes/{id}/activate` — admin only; persisted to `storage/theme.json`
+- `POST /api/themes/{id}/activate` — admin only; sets the panel default in `storage/theme.json`
 
 ## Addons
 

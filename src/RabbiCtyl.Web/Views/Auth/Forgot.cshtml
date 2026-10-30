@@ -12,7 +12,6 @@
                 <partial name="_BrandMark" />
                 <span class="brand__text">
                     <span class="brand__name">@Branding.Current.Name</span>
-                    <span class="brand__sub">@L["brand.subtitle"]</span>
                 </span>
             </div>
 
@@ -40,18 +39,20 @@
                 {
                     <div class="alert alert--warning" role="status">@L["forgot.mailDisabled"]</div>
                 }
+                else
+                {
+                    <form method="post" asp-controller="Auth" asp-action="Forgot" class="form">
+                        <div asp-validation-summary="ModelOnly" class="alert alert--danger"></div>
 
-                <form method="post" asp-controller="Auth" asp-action="Forgot" class="form">
-                    <div asp-validation-summary="ModelOnly" class="alert alert--danger"></div>
+                        <div class="form__group">
+                            <label asp-for="Email" class="form__label">@L["forgot.email"]</label>
+                            <input asp-for="Email" class="form__input" type="email" autocomplete="email" autofocus />
+                            <span asp-validation-for="Email" class="form__error"></span>
+                        </div>
 
-                    <div class="form__group">
-                        <label asp-for="Email" class="form__label">@L["forgot.email"]</label>
-                        <input asp-for="Email" class="form__input" type="email" autocomplete="email" autofocus />
-                        <span asp-validation-for="Email" class="form__error"></span>
-                    </div>
-
-                    <button type="submit" class="button button--primary button--block">@L["forgot.submit"]</button>
-                </form>
+                        <button type="submit" class="button button--primary button--block">@L["forgot.submit"]</button>
+                    </form>
+                }
 
                 <p class="auth__note">
                     <a asp-controller="Auth" asp-action="Login">@L["forgot.back"]</a>

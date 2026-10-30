@@ -128,6 +128,36 @@ if (localeSelect) {
   });
 }
 
+// The theme is a browser preference: localStorage is the source of truth and a
+// cookie carries the same id so the server can pick the matching layout.
+const themeStorageKey = "rabbictyl.theme";
+
+function applyTheme(theme: string): void {
+  document.documentElement.dataset.theme = theme;
+
+  try {
+    window.localStorage.setItem(themeStorageKey, theme);
+  } catch {
+    // Ignore storage failures; the cookie still carries the choice.
+  }
+
+  document.cookie = `rabbictyl_theme=${encodeURIComponent(theme)}; path=/; max-age=31536000; samesite=lax`;
+}
+
+document.querySelectorAll<HTMLButtonElement>("[data-theme-select]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const theme = button.dataset.themeSelect;
+
+    if (!theme) {
+      return;
+    }
+
+    applyTheme(theme);
+    // Reload so the server can render the theme's layout (Pterodactyl, default).
+    window.location.reload();
+  });
+});
+
 const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? "";
 
 async function postJson(url: string, body: unknown): Promise<Response> {

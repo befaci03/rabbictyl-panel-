@@ -392,6 +392,17 @@ public sealed class AdminController : Controller
         return RedirectToAction(nameof(General));
     }
 
+    [HttpPost("general/reload-addons")]
+    public async Task<IActionResult> ReloadAddons(CancellationToken cancellationToken)
+    {
+        await _addonHost.ReloadAsync(cancellationToken);
+
+        TempData["Success"] =
+            "Add-ons reloaded. Their browser scripts refresh with the next page load.";
+
+        return RedirectToAction(nameof(General));
+    }
+
     [HttpPost("general/allocations")]
     public async Task<IActionResult> CreateAllocations(
         CreateAllocationsForm form,

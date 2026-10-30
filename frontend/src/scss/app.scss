@@ -1982,19 +1982,20 @@ code {
 }
 
 .ptero-shell {
-  display: grid;
-  grid-template-columns: 252px minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
 .ptero-sidebar {
   position: sticky;
-  top: 0;
+  top: 56px;
+  grid-area: sidebar;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  height: 100vh;
-  padding: 18px 12px 14px;
+  height: calc(100vh - 56px);
+  padding: 14px 12px;
   background: #0b1220;
   border-right: 1px solid var(--border);
 }
@@ -2090,7 +2091,7 @@ code {
 
 .ptero-shell.is-compact .ptero-sidebar-expand {
   position: absolute;
-  top: 12px;
+  top: calc(56px + 12px);
   left: calc(76px - 13px);
   z-index: 5;
   display: inline-flex;
@@ -2263,6 +2264,7 @@ code {
 
 .ptero-main {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   min-width: 0;
 }
@@ -2270,7 +2272,8 @@ code {
 .ptero-topbar {
   position: sticky;
   top: 0;
-  z-index: 20;
+  grid-area: topbar;
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -2342,6 +2345,144 @@ code {
 .ptero-topbar__user {
   color: var(--muted);
   font-size: 12px;
+}
+
+.ptero-topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: none;
+  color: var(--text);
+}
+
+.ptero-topbar__brand .brand__mark {
+  width: 26px;
+  height: 26px;
+}
+
+.ptero-topbar__brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ptero-serverhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.ptero-serverhead__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ptero-serverhead__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.ptero-serverhead__text strong {
+  overflow: hidden;
+  font-size: 14.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ptero-serverhead__text span {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.ptero-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  margin-left: 8px;
+}
+
+.ptero-nav__link {
+  padding: 7px 11px;
+  border-radius: 3px;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.ptero-nav__link:hover {
+  background: rgb(255 255 255 / 5%);
+  color: var(--text);
+}
+
+.ptero-nav__link.is-active {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.ptero-servertabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 28px;
+  overflow-x: auto;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.ptero-servertab {
+  padding: 11px 10px;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.ptero-servertab:hover {
+  color: var(--text);
+}
+
+.ptero-servertab.is-active {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+}
+
+.ptero-serverhead__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex: none;
+}
+
+.ptero-serverhead__dot.is-running {
+  background: var(--success);
+}
+
+.ptero-serverhead__dot.is-busy {
+  background: var(--warning);
+}
+
+.ptero-serverhead__dot.is-stopped,
+.ptero-serverhead__dot.is-offline {
+  background: var(--danger);
+}
+
+.ptero-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11.5px;
 }
 
 .ptero-content {
@@ -2518,6 +2659,12 @@ code {
   .ptero-shell {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+@media (width <= 900px) {
+  .ptero-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
   .ptero-shell.is-compact {
     grid-template-columns: minmax(0, 1fr);
@@ -2653,6 +2800,14 @@ code {
     height: 100dvh;
     transform: translateX(-100%);
     transition: transform 0.2s ease;
+  }
+
+  .ptero-shell {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .ptero-serverhead {
+    padding: 12px 14px;
   }
 
   .ptero-shell.is-sidebar-open .ptero-sidebar {

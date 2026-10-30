@@ -1,8 +1,9 @@
-@inject IThemeState ThemeState
 @inject IThemeCatalog ThemeCatalog
 @inject IAddonCatalog AddonCatalog
 @{
-    var activeTheme = await ThemeCatalog.FindAsync(ThemeState.ActiveThemeId);
+    var themes = await ThemeCatalog.ListAsync();
+    var activeTheme = await ThemeSelection.ResolveAsync(Context);
+    var themeIds = string.Join(' ', themes.Select(theme => theme.Id));
     var panelName = Branding.Current.Name;
     var title = ViewData["Title"] as string ?? panelName;
     var logoUrl = activeTheme is not null && activeTheme.AssetUrls.TryGetValue("logo", out var themeLogo)
@@ -11,17 +12,31 @@
     var addonScripts = await AddonCatalog.ListAsync(enabledOnly: true);
 }
 <!DOCTYPE html>
-<html lang="en" data-theme="@(activeTheme?.Id ?? "default_dark")">
+<html lang="en" data-theme="@(activeTheme?.Id ?? "default_dark")" data-themes="@themeIds">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0a0c10" />
     <title>@title · @panelName</title>
     <link rel="icon" href="@(logoUrl ?? Url.Content("~/logo.svg"))" />
+    @* The browser owns the theme choice, so apply it before the stylesheets paint. *@
+    <script>
+        (() => {
+            try {
+                const stored = localStorage.getItem("rabbictyl.theme");
+                const installed = (document.documentElement.dataset.themes || "").split(" ").filter(Boolean);
+                if (stored && installed.includes(stored)) {
+                    document.documentElement.dataset.theme = stored;
+                }
+            } catch {
+                // Storage can be unavailable; the server-rendered theme stays.
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="~/assets/css/app.css" asp-append-version="true" />
-    @if (activeTheme is not null)
+    @foreach (var theme in themes)
     {
-        foreach (var style in activeTheme.StylesheetUrls)
+        foreach (var style in theme.StylesheetUrls)
         {
             <link rel="stylesheet" href="@style" />
         }
@@ -37,9 +52,9 @@
             <script type="module" src="@script"></script>
         }
     }
-    @if (activeTheme is not null)
+    @foreach (var theme in themes)
     {
-        foreach (var script in activeTheme.ScriptUrls)
+        foreach (var script in theme.ScriptUrls)
         {
             <script type="module" src="@script"></script>
         }

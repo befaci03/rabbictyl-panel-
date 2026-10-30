@@ -1,12 +1,12 @@
-@inject IThemeState ThemeState
 @inject IThemeCatalog ThemeCatalog
 @inject IAddonCatalog AddonCatalog
 @inject IAntiforgery Antiforgery
 @inject PanelOptions PanelOptions
-@inject IServerStore ServerStore
 @{
     var authenticated = User.Identity?.IsAuthenticated == true;
-    var activeTheme = await ThemeCatalog.FindAsync(ThemeState.ActiveThemeId);
+    var themes = await ThemeCatalog.ListAsync();
+    var activeTheme = await ThemeSelection.ResolveAsync(Context);
+    var themeIds = string.Join(' ', themes.Select(theme => theme.Id));
     var addons = authenticated
         ? await AddonCatalog.ListAsync(enabledOnly: true)
         : Array.Empty<AddonDescriptor>();
@@ -16,6 +16,8 @@
     var isAdmin = authenticated && User.IsInRole("admin");
     var currentServer = ViewData["Server"] as Server;
     var currentSection = ViewData["ServerSection"] as string ?? "console";
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
     var logoUrl = activeTheme is not null && activeTheme.AssetUrls.TryGetValue("logo", out var themeLogo)
         ? themeLogo
         : null;
@@ -26,24 +28,28 @@
         ? L["env.development"]
         : PanelOptions.App.Environment;
     var panelName = Branding.Current.Name;
-    var showSidebarLogo = !Branding.Current.HideSidebarLogo;
+    var showLogo = !Branding.Current.HideSidebarLogo;
     var faviconUrl = Branding.LogoPath is not null
         ? $"{Url.Content("~/panel/logo")}?v={Branding.LogoVersion}"
         : logoUrl ?? Url.Content("~/logo.svg");
+    var restrictedServer = currentServer is not null && currentServer.AccessRestricted && !isAdmin;
     ViewData["BrandLogoUrl"] = logoUrl;
 
-    IReadOnlyList<Server> sidebarServers = [];
-
-    if (authenticated)
+    string NavClass(string controllerName, string? actionName = null)
     {
-        var userId = User.GetUserId();
-        sidebarServers = isAdmin
-            ? await ServerStore.ListAsync()
-            : userId is null
-                ? []
-                : await ServerStore.ListForUserAsync(userId.Value);
-        sidebarServers = sidebarServers.OrderBy(server => server.Name).ToList();
+        var matchesController = string.Equals(currentController, controllerName, StringComparison.OrdinalIgnoreCase);
+        var matchesAction = actionName is null
+            || string.Equals(currentAction, actionName, StringComparison.OrdinalIgnoreCase);
+
+        return matchesController && matchesAction
+            ? "ptero-nav__link is-active"
+            : "ptero-nav__link";
     }
+
+    string TabClass(string section) =>
+        string.Equals(currentSection, section, StringComparison.OrdinalIgnoreCase)
+            ? "ptero-servertab is-active"
+            : "ptero-servertab";
 
     string StatusClass(ServerStatus status) => status switch
     {
@@ -52,13 +58,11 @@
         ServerStatus.Stopping or ServerStatus.Suspended or ServerStatus.InstallFailed => "is-stopped",
         _ => "is-offline",
     };
-
-    var sectionLabel = currentServer is not null
-        ? L[$"nav.{currentSection}"]
-        : title;
 }
 <!DOCTYPE html>
-<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-theme="@(activeTheme?.Id ?? "default_dark")">
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName"
+      data-theme="@(activeTheme?.Id ?? "default_dark")"
+      data-themes="@themeIds">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -66,10 +70,24 @@
     <meta name="theme-color" content="#111827" />
     <title>@title · @panelName</title>
     <link rel="icon" href="@faviconUrl" />
+    @* The browser owns the theme choice, so apply it before the stylesheets paint. *@
+    <script>
+        (() => {
+            try {
+                const stored = localStorage.getItem("rabbictyl.theme");
+                const installed = (document.documentElement.dataset.themes || "").split(" ").filter(Boolean);
+                if (stored && installed.includes(stored)) {
+                    document.documentElement.dataset.theme = stored;
+                }
+            } catch {
+                // Storage can be unavailable; the server-rendered theme stays.
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="~/assets/css/app.css" asp-append-version="true" />
-    @if (activeTheme is not null)
+    @foreach (var theme in themes)
     {
-        foreach (var style in activeTheme.StylesheetUrls)
+        foreach (var style in theme.StylesheetUrls)
         {
             <link rel="stylesheet" href="@style" />
         }
@@ -79,131 +97,106 @@
 @if (authenticated)
 {
     <div class="ptero-shell" id="app-shell">
-        <aside class="ptero-sidebar" id="sidebar">
-            <div class="ptero-sidebar__head">
-                <button type="button"
-                        class="icon-button ptero-sidebar__collapse"
-                        id="sidebar-collapse"
-                        aria-controls="sidebar"
-                        aria-expanded="true"
-                        title="@L["nav.collapse"]"
-                        aria-label="@L["nav.collapse"]">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-                        <path d="M13 6l-6 6 6 6M19 6l-6 6 6 6" />
-                    </svg>
-                </button>
+        @* Pterodactyl has no sidebar: a single navbar, the content, then a footer. *@
+        <header class="ptero-topbar">
+            <button type="button"
+                    class="ptero-menu"
+                    id="sidebar-toggle"
+                    aria-controls="sidebar"
+                    aria-label="@L["nav.open"]"
+                    aria-expanded="false"
+                    title="@L["nav.open"]"
+                    data-label-open="@L["nav.open"]"
+                    data-label-close="@L["nav.close"]">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+            </button>
 
-                <a class="ptero-brand" asp-controller="Home" asp-action="Index">
-                    @if (showSidebarLogo)
-                    {
-                        <partial name="_BrandMark" />
-                    }
-                    <span class="ptero-brand__text">
-                        <span class="ptero-brand__name">@panelName</span>
-                    </span>
-                </a>
+            <a class="ptero-topbar__brand" asp-controller="Home" asp-action="Index">
+                @if (showLogo)
+                {
+                    <partial name="_BrandMark" />
+                }
+                <span class="ptero-topbar__brand-name">@panelName</span>
+            </a>
+
+            <nav class="ptero-nav" id="sidebar" aria-label="Primary">
+                <a class="@NavClass("Home", "Index")" asp-controller="Home" asp-action="Index">@L["nav.dashboard"]</a>
+                <a class="@NavClass("Home", "Overview")" asp-controller="Home" asp-action="Overview">@L["nav.overview"]</a>
+                <a class="@NavClass("Account")" asp-controller="Account" asp-action="Index">@L["nav.account"]</a>
+                <a class="@NavClass("Themes")" asp-controller="Themes" asp-action="Index">@L["nav.themes"]</a>
+                @if (isAdmin)
+                {
+                    <a class="@NavClass("Admin")" asp-controller="Admin" asp-action="Nodes">@L["nav.administration"]</a>
+                }
+            </nav>
+
+            <div class="ptero-topbar__meta">
+                <span class="ptero-topbar__user">@displayName</span>
+                <partial name="_LocaleSwitcher" />
+                <span class="pill pill--muted">@environmentLabel</span>
+                <form method="post" asp-controller="Auth" asp-action="Logout" class="user-chip__form">
+                    <button type="submit" class="icon-button" title="@L["nav.signout"]" aria-label="@L["nav.signout"]">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                            <path d="M14 4.5h3A2.5 2.5 0 0 1 19.5 7v10a2.5 2.5 0 0 1-2.5 2.5h-3" />
+                            <path d="M10 8l4 4-4 4M14 12H4.5" />
+                        </svg>
+                    </button>
+                </form>
             </div>
-
-            <div class="ptero-sidebar__scroll">
-                <div class="ptero-servers">
-                    <span class="ptero-sidebar__heading">@L["nav.servers"]</span>
-                    @if (sidebarServers.Count == 0)
-                    {
-                        <span class="ptero-servers__empty">@L["home.empty.title"]</span>
-                    }
-                    else
-                    {
-                        foreach (var sidebarServer in sidebarServers)
-                        {
-                            var active = currentServer is not null && currentServer.Uuid == sidebarServer.Uuid;
-                            <a class="ptero-server @(active ? "is-active" : string.Empty)"
-                               asp-controller="Server" asp-action="Index" asp-route-uuid="@sidebarServer.Uuid">
-                                <span class="ptero-server__dot @StatusClass(sidebarServer.Status)"></span>
-                                <span class="ptero-server__name">@sidebarServer.Name</span>
-                                <span class="ptero-server__status">@sidebarServer.Status</span>
-                            </a>
-                        }
-                    }
-                </div>
-
-                <partial name="_SidebarNav" />
-            </div>
-
-            <div class="ptero-sidebar__footer">
-                <div class="ptero-user">
-                    <a class="ptero-user__meta" asp-controller="Account" asp-action="Index" title="@L["nav.account"]">
-                        <span class="ptero-user__name">@displayName</span>
-                        <span class="ptero-user__role">@(isAdmin ? L["role.admin"] : L["role.member"])</span>
-                    </a>
-                    <form method="post" asp-controller="Auth" asp-action="Logout" class="user-chip__form">
-                        <button type="submit" class="icon-button" title="@L["nav.signout"]" aria-label="@L["nav.signout"]">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-                                <path d="M14 4.5h3A2.5 2.5 0 0 1 19.5 7v10a2.5 2.5 0 0 1-2.5 2.5h-3" />
-                                <path d="M10 8l4 4-4 4M14 12H4.5" />
-                            </svg>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Hangs on the outside edge of the sidebar, in the logo's spot. -->
-        <button type="button"
-                class="ptero-sidebar-expand"
-                id="sidebar-expand"
-                aria-controls="sidebar"
-                aria-expanded="false"
-                title="@L["nav.expand"]"
-                aria-label="@L["nav.expand"]">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-                <path d="M11 6l6 6-6 6M5 6l6 6-6 6" />
-            </svg>
-        </button>
+        </header>
 
         <div class="ptero-backdrop" data-sidebar-close aria-hidden="true"></div>
 
-        <div class="ptero-main">
-            <header class="ptero-topbar">
-                <button type="button"
-                        class="ptero-menu"
-                        id="sidebar-toggle"
-                        aria-controls="sidebar"
-                        aria-label="@L["nav.open"]"
-                        aria-expanded="false"
-                        title="@L["nav.open"]"
-                        data-label-open="@L["nav.open"]"
-                        data-label-close="@L["nav.close"]">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                        <path d="M4 7h16M4 12h16M4 17h16" />
-                    </svg>
-                </button>
+        <main class="ptero-main">
+            @if (currentServer is not null)
+            {
+                <div class="ptero-serverhead">
+                    <div class="ptero-serverhead__main">
+                        <span class="ptero-serverhead__dot @StatusClass(currentServer.Status)"></span>
+                        <div class="ptero-serverhead__text">
+                            <strong>@currentServer.Name</strong>
+                            <span>@currentServer.AllocationIp:@currentServer.AllocationPort · @currentServer.Status</span>
+                        </div>
+                    </div>
 
-                <div class="ptero-topbar__crumb">
-                    <a class="ptero-topbar__app" asp-controller="Home" asp-action="Index">@panelName</a>
-                    <span class="ptero-topbar__slash">/</span>
-                    @if (currentServer is not null)
-                    {
-                        <a asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid">@currentServer.Name</a>
-                        <span class="ptero-topbar__slash">/</span>
-                        <strong>@sectionLabel</strong>
-                    }
-                    else
-                    {
-                        <strong>@title</strong>
-                    }
+                    <a class="button button--ghost button--sm"
+                       asp-controller="Home"
+                       asp-action="Index">
+                        @L["nav.dashboard"]
+                    </a>
                 </div>
 
-                <div class="ptero-topbar__meta">
-                    <span class="ptero-topbar__user">@displayName</span>
-                    <partial name="_LocaleSwitcher" />
-                    <span class="pill pill--muted">@environmentLabel</span>
-                </div>
-            </header>
+                <nav class="ptero-servertabs" aria-label="@currentServer.Name">
+                    <a class="@TabClass("console")"
+                       asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid" asp-route-section="console">@L["nav.console"]</a>
+                    <a class="@TabClass("files")"
+                       asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid" asp-route-section="files">@L["nav.files"]</a>
+                    @if (!restrictedServer)
+                    {
+                        <a class="@TabClass("backups")"
+                           asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid" asp-route-section="backups">@L["nav.backups"]</a>
+                        <a class="@TabClass("schedules")"
+                           asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid" asp-route-section="schedules">@L["nav.schedules"]</a>
+                        <a class="@TabClass("users")"
+                           asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid" asp-route-section="users">@L["nav.users"]</a>
+                        <a class="@TabClass("startup")"
+                           asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid" asp-route-section="startup">@L["nav.startup"]</a>
+                    }
+                    <a class="@TabClass("settings")"
+                       asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid" asp-route-section="settings">@L["nav.settings"]</a>
+                </nav>
+            }
 
-            <main class="ptero-content">
+            <div class="ptero-content">
                 @RenderBody()
-            </main>
-        </div>
+            </div>
+        </main>
+
+        <footer class="ptero-footer">
+            <span>@panelName @DateTime.UtcNow.Year - @DateTime.UtcNow.Year</span>
+        </footer>
     </div>
 }
 else
@@ -223,9 +216,9 @@ else
         }
     }
 }
-@if (activeTheme is not null)
+@foreach (var theme in themes)
 {
-    foreach (var script in activeTheme.ScriptUrls)
+    foreach (var script in theme.ScriptUrls)
     {
         <script type="module" src="@script"></script>
     }

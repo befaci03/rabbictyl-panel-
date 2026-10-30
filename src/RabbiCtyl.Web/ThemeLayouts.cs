@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using RabbiCtyl.Core.Abstractions;
 
 namespace RabbiCtyl.Web;
 
@@ -11,9 +9,7 @@ public static class ThemeLayouts
         bool auth,
         CancellationToken cancellationToken = default)
     {
-        var themeState = context.RequestServices.GetRequiredService<IThemeState>();
-        var themes = context.RequestServices.GetRequiredService<IThemeCatalog>();
-        var theme = await themes.FindAsync(themeState.ActiveThemeId, cancellationToken);
+        var theme = await ThemeSelection.ResolveAsync(context, cancellationToken);
 
         return (theme?.Manifest.Layout?.Trim().ToLowerInvariant()) switch
         {

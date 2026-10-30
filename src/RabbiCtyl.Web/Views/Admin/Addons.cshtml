@@ -1,4 +1,6 @@
 @model IReadOnlyList<AddonDescriptor>
+@using RabbiCtyl.Infrastructure.Extensions
+@inject AddonHost AddonHost
 @{
     ViewData["Title"] = "Addons";
 }
@@ -41,6 +43,8 @@
         <div class="addon-grid">
             @foreach (var addon in Model)
             {
+                var settingsTab = AddonHost.AdminTabs.FirstOrDefault(tab =>
+                    string.Equals(tab.AddonId, addon.Id, StringComparison.OrdinalIgnoreCase));
                 <article class="addon-card card">
                     <div class="addon-card__top">
                         <span class="addon-card__icon">
@@ -81,6 +85,20 @@
                         </div>
                     </dl>
                     <div class="addon-card__actions">
+                        @if (settingsTab is not null)
+                        {
+                            <a class="icon-button addon-card__settings"
+                               asp-controller="AdminAddon"
+                               asp-action="Page"
+                               asp-route-slug="@settingsTab.Slug"
+                               title="@settingsTab.Label settings"
+                               aria-label="@settingsTab.Label settings">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="3.1" />
+                                    <path d="M19.2 13.4a7.6 7.6 0 0 0 0-2.8l2-1.5-2-3.4-2.4 1a7.7 7.7 0 0 0-2.4-1.4L14 2.8h-4l-.4 2.5a7.7 7.7 0 0 0-2.4 1.4l-2.4-1-2 3.4 2 1.5a7.6 7.6 0 0 0 0 2.8l-2 1.5 2 3.4 2.4-1a7.7 7.7 0 0 0 2.4 1.4l.4 2.5h4l.4-2.5a7.7 7.7 0 0 0 2.4-1.4l2.4 1 2-3.4z" />
+                                </svg>
+                            </a>
+                        }
                         <form method="post" asp-controller="Admin" asp-action="ToggleAddon" asp-route-id="@addon.Id" class="inline-form">
                             <input type="hidden" name="enabled" value="@((!addon.IsEnabled).ToString().ToLowerInvariant())" />
                             <button type="submit" class="button @(addon.IsEnabled ? "button--ghost" : "button--primary") button--sm">

@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Themes";
     var isAdmin = User.IsInRole("admin");
+    var selectedId = Context.Request.Cookies[ThemeSelection.CookieName];
 }
 
 <section class="page">
@@ -9,7 +10,7 @@
         <div>
             <span class="eyebrow">Appearance</span>
             <h1 class="page__title">Themes</h1>
-            <p class="page__subtitle">Themes installed in the panel's theme folder.</p>
+            <p class="page__subtitle">Pick the look for this browser. Your choice is stored locally and does not change the panel for anyone else.</p>
         </div>
         <span class="pill pill--muted">@Model.Themes.Count</span>
     </header>
@@ -31,17 +32,19 @@
         <div class="theme-grid">
             @foreach (var theme in Model.Themes)
             {
-                var isActive = string.Equals(theme.Id, Model.ActiveThemeId, StringComparison.Ordinal);
-                <article class="theme-card card @(isActive ? "is-active" : string.Empty)">
+                var isSelected = string.Equals(theme.Id, selectedId, StringComparison.Ordinal);
+                var isDefault = string.Equals(theme.Id, Model.ActiveThemeId, StringComparison.Ordinal);
+                <article class="theme-card card @(isSelected ? "is-active" : string.Empty)"
+                         data-theme-card="@theme.Id">
                     <div class="theme-card__top">
                         <span class="theme-card__swatch" aria-hidden="true"></span>
-                        @if (isActive)
+                        @if (isSelected)
                         {
-                            <span class="badge badge--running">Active</span>
+                            <span class="badge badge--running">Selected</span>
                         }
-                        else
+                        else if (isDefault)
                         {
-                            <span class="badge">Inactive</span>
+                            <span class="badge">Panel default</span>
                         }
                     </div>
                     <h2 class="theme-card__name">@theme.Name</h2>
@@ -56,12 +59,22 @@
                             <dd>@theme.Manifest.Author</dd>
                         </div>
                     </dl>
-                    @if (isAdmin && !isActive)
-                    {
-                        <form method="post" asp-controller="Themes" asp-action="Activate" asp-route-id="@theme.Id">
-                            <button type="submit" class="button button--primary button--sm">Activate</button>
-                        </form>
-                    }
+                    <div class="theme-card__actions">
+                        <button type="button"
+                                class="button button--primary button--sm"
+                                data-theme-select="@theme.Id"
+                                @(isSelected ? "disabled" : null)>
+                            @(isSelected ? "In use" : "Use this theme")
+                        </button>
+                        @if (isAdmin)
+                        {
+                            <form method="post" asp-controller="Themes" asp-action="Activate" asp-route-id="@theme.Id" class="inline-form">
+                                <button type="submit" class="button button--ghost button--sm" title="Use this theme for visitors with no choice saved">
+                                    Make default
+                                </button>
+                            </form>
+                        }
+                    </div>
                 </article>
             }
         </div>
