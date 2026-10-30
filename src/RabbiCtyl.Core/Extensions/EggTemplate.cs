@@ -65,6 +65,29 @@ public static class EggTemplate
         }
     }
 
+    /// <summary>
+    /// Copies an egg so a nest template can be edited in the panel. The UUID is
+    /// preserved so servers keep pointing at the same template; the TOML file is
+    /// never rewritten.
+    /// </summary>
+    public static Egg CopyOf(Egg egg) => new()
+    {
+        Uuid = egg.Uuid,
+        Name = egg.Name,
+        Description = egg.Description,
+        Author = egg.Author,
+        DockerImage = egg.DockerImage,
+        DockerImagesJson = egg.DockerImagesJson,
+        StartupCommand = egg.StartupCommand,
+        ForceOutgoingIp = egg.ForceOutgoingIp,
+        FileDenylistJson = egg.FileDenylistJson,
+        ProcessConfigurationJson = egg.ProcessConfigurationJson,
+        ScriptContainer = egg.ScriptContainer,
+        ScriptEntrypoint = egg.ScriptEntrypoint,
+        ScriptInstall = egg.ScriptInstall,
+        VariablesJson = egg.VariablesJson,
+    };
+
     public static void ApplyTo(Server server, Egg egg)
     {
         server.EggId = egg.Id;

@@ -10,7 +10,6 @@
             <h1 class="page__title">@L["admin.games"]</h1>
             <p class="page__subtitle">@L["admin.games.subtitle"]</p>
         </div>
-        <span class="pill pill--muted">@Model.Count</span>
     </header>
 
     <partial name="_AdminTabs" />
@@ -142,11 +141,46 @@
                             <td class="table__number">@EggTemplate.Variables(template.Egg).Count</td>
                             <td>
                                 <div class="table__actions">
-                                    @if (template.FromNest)
-                                    {
-                                        <span class="table__secondary">@L["admin.games.nestReadOnly"]</span>
-                                    }
-                                    else
+                                    <details class="node-config">
+                                        <summary class="button button--ghost button--sm">@L["admin.games.edit"]</summary>
+                                        <div class="node-config__body">
+                                            @if (template.FromNest)
+                                            {
+                                                <div class="alert alert--warning" role="status">@L["admin.games.nestEditWarning"]</div>
+                                            }
+                                            <form method="post" asp-controller="Admin" asp-action="UpdateGame" asp-route-uuid="@template.Egg.Uuid" class="form">
+                                                <div class="admin-create__grid">
+                                                    <div class="form__group">
+                                                        <label class="form__label" for="edit-game-name-@template.Egg.Uuid">@L["admin.games.name"]</label>
+                                                        <input class="form__input" id="edit-game-name-@template.Egg.Uuid" name="Name" value="@template.Egg.Name" required maxlength="191" />
+                                                    </div>
+                                                    <div class="form__group">
+                                                        <label class="form__label" for="edit-game-author-@template.Egg.Uuid">@L["admin.games.author"]</label>
+                                                        <input class="form__input" id="edit-game-author-@template.Egg.Uuid" name="Author" value="@template.Egg.Author" maxlength="191" />
+                                                    </div>
+                                                    <div class="form__group">
+                                                        <label class="form__label" for="edit-game-image-@template.Egg.Uuid">@L["server.startup.image"]</label>
+                                                        <input class="form__input" id="edit-game-image-@template.Egg.Uuid" name="Image" value="@EggTemplate.Image(template.Egg)" required maxlength="255" />
+                                                    </div>
+                                                    <div class="form__group">
+                                                        <label class="form__label" for="edit-game-description-@template.Egg.Uuid">@L["admin.games.description"]</label>
+                                                        <input class="form__input" id="edit-game-description-@template.Egg.Uuid" name="Description" value="@template.Egg.Description" maxlength="1024" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="form__group">
+                                                    <label class="form__label" for="edit-game-startup-@template.Egg.Uuid">@L["server.startup.command"]</label>
+                                                    <input class="form__input" id="edit-game-startup-@template.Egg.Uuid" name="Startup" value="@template.Egg.StartupCommand" required maxlength="1024" />
+                                                </div>
+
+                                                <div class="admin-create__actions">
+                                                    <button type="submit" class="button button--primary button--sm">@L["admin.games.save"]</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </details>
+
+                                    @if (!template.FromNest)
                                     {
                                         <form method="post" asp-controller="Admin" asp-action="DeleteGame" asp-route-uuid="@template.Egg.Uuid" class="inline-form">
                                             <button type="submit" class="button button--ghost button--sm">@L["admin.games.delete"]</button>

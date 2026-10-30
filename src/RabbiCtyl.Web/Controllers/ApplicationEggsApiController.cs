@@ -7,8 +7,8 @@ using RabbiCtyl.Core.Extensions;
 namespace RabbiCtyl.Web.Controllers;
 
 /// <summary>
-/// Application API for game templates. Templates loaded from nest TOML files are
-/// read-only here; templates created through the API or admin area can be edited.
+/// Application API for game templates. Editing a nest template stores a panel
+/// copy that shadows the TOML egg; the file itself is never rewritten.
 /// </summary>
 [ApiController]
 [Authorize(Roles = "admin")]
@@ -93,12 +93,13 @@ public sealed class ApplicationEggsApiController : ControllerBase
             return NotFound();
         }
 
-        if (template.FromNest)
-        {
-            return Conflict(new { error = "This template is defined by a nest file and is read-only." });
-        }
+        var egg = await _eggs.FindByUuidAsync(template.Egg.Uuid, cancellationToken);
+        var created = egg is null;
 
-        var egg = template.Egg;
+        // A nest egg only exists in the TOML file; the first edit is stored as a
+        // panel copy. Converting panel changes back to TOML is lossy, so the copy
+        // shadows the file instead of writing to it.
+        egg ??= EggTemplate.CopyOf(template.Egg);
 
         if (request.Name is not null)
         {
@@ -127,9 +128,16 @@ public sealed class ApplicationEggsApiController : ControllerBase
                 new Dictionary<string, string> { ["default"] = request.Image });
         }
 
-        await _eggs.UpdateAsync(egg, cancellationToken);
+        if (created)
+        {
+            await _eggs.AddAsync(egg, cancellationToken);
+        }
+        else
+        {
+            await _eggs.UpdateAsync(egg, cancellationToken);
+        }
 
-        return Ok(ToDto(new GameTemplate(egg, null, null, FromNest: false)));
+        return Ok(ToDto(new GameTemplate(egg, template.NestId, template.NestName, template.FromNest)));
     }
 
     [HttpDelete("{uuid}")]
@@ -142,12 +150,17 @@ public sealed class ApplicationEggsApiController : ControllerBase
             return NotFound();
         }
 
-        if (template.FromNest)
+        var stored = await _eggs.FindByUuidAsync(template.Egg.Uuid, cancellationToken);
+
+        if (stored is null)
         {
-            return Conflict(new { error = "This template is defined by a nest file and is read-only." });
+            return Conflict(new
+            {
+                error = "This template only exists in a nest file. Edit it once to store a panel copy before deleting.",
+            });
         }
 
-        await _eggs.DeleteAsync(template.Egg, cancellationToken);
+        await _eggs.DeleteAsync(stored, cancellationToken);
 
         return NoContent();
     }

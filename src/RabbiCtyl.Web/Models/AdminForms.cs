@@ -125,6 +125,24 @@ public sealed class CreateGameTemplateForm
     public string StopValue { get; set; } = "stop";
 }
 
+public sealed class UpdateGameTemplateForm
+{
+    [Required, StringLength(191, MinimumLength = 1)]
+    public string Name { get; set; } = string.Empty;
+
+    [StringLength(1024)]
+    public string? Description { get; set; }
+
+    [StringLength(191)]
+    public string Author { get; set; } = string.Empty;
+
+    [Required, StringLength(1024, MinimumLength = 1)]
+    public string Startup { get; set; } = string.Empty;
+
+    [Required, StringLength(255, MinimumLength = 1)]
+    public string Image { get; set; } = string.Empty;
+}
+
 public sealed class CreateUserForm
 {
     [Required, StringLength(32, MinimumLength = 3), RegularExpression("^[a-zA-Z0-9_.-]+$")]

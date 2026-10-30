@@ -10,6 +10,9 @@
     <ProjectReference Include="..\RabbiCtyl.Core\RabbiCtyl.Core.csproj" />
     <ProjectReference Include="..\RabbiCtyl.Configuration\RabbiCtyl.Configuration.csproj" />
     <ProjectReference Include="..\RabbiCtyl.Infrastructure\RabbiCtyl.Infrastructure.csproj" />
+    <!-- Builds the bundled demo add-on into addons/demo_user/lib without linking it. -->
+    <ProjectReference Include="..\RabbiCtyl.Addon.DemoUser\RabbiCtyl.Addon.DemoUser.csproj"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

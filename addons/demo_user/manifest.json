@@ -1,0 +1,13 @@
+{
+  "id": "demo_user",
+  "name": "Demo User",
+  "version": "1.0.0",
+  "description": "Creates a demo account (demo / demo) on startup so the panel can be tried without a real sign-up. Disabled by default.",
+  "author": "RabbiCtyl",
+  "enabled": false,
+  "assembly": "lib/RabbiCtyl.Addon.DemoUser.dll",
+  "entry": "RabbiCtyl.Addon.DemoUser.DemoUserAddon",
+  "assets": {
+    "icon": "assets/icon.svg"
+  }
+}

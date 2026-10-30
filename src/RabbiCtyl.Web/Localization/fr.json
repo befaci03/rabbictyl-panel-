@@ -172,8 +172,7 @@
   "admin.games.source": "Source",
   "admin.games.fromNest": "Nid",
   "admin.games.fromPanel": "Panneau",
-  "admin.games.nestReadOnly": "Lecture seule (modifiez le fichier TOML)",
-  "admin.games.nestHint": "Les nids sont des fichiers TOML dans le dossier nests/. Chaque œuf devient un modèle en lecture seule ici.",
+  "admin.games.nestHint": "Les nids sont des fichiers TOML dans le dossier nests/. Chaque œuf devient un modèle ; le modifier crée une copie dans le panneau et laisse le fichier intact.",
   "admin.games.doneHint": "Un motif par ligne. Laissez vide pour marquer le serveur comme démarré dès son lancement.",
   "admin.oauth2": "OAuth2",
   "admin.oauth2.subtitle": "Fournisseurs de connexion gérés par l'extension OAuth2, côté serveur.",
@@ -220,5 +219,8 @@
   "overview.empty": "Aucun serveur dans cet état.",
   "overview.close": "Fermer",
   "admin.addons": "Extensions",
-  "admin.eyebrow": "Administration"
+  "admin.eyebrow": "Administration",
+  "admin.games.edit": "Modifier",
+  "admin.games.save": "Enregistrer",
+  "admin.games.nestEditWarning": "Ce modèle vient d'un fichier TOML de nid. L'enregistrement crée une copie dans le panneau : reconvertir les modifications en TOML est lossy, le fichier reste donc intact."
 }

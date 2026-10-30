@@ -4,17 +4,20 @@ using Microsoft.Extensions.Logging;
 using RabbiCtyl.Addons.Abstractions;
 using RabbiCtyl.Core.Abstractions;
 using RabbiCtyl.Core.Extensions;
+using RabbiCtyl.Infrastructure.Maintenance;
 
 namespace RabbiCtyl.Infrastructure.Extensions;
 
 /// <summary>
 /// Loads enabled C# addons from their manifests at host startup. Each addon
 /// gets its own collectible load context so it can be unloaded on shutdown.
+/// Addons can use the panel's stores, so loading waits for the database.
 /// </summary>
-public sealed class AddonHost : IHostedService, IAsyncDisposable
+public sealed class AddonHost : BackgroundService
 {
     private readonly IAddonCatalog _catalog;
     private readonly IServiceProvider _services;
+    private readonly MaintenanceState _maintenance;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<AddonHost> _logger;
     private readonly List<LoadedAddon> _loaded = [];
@@ -22,18 +25,25 @@ public sealed class AddonHost : IHostedService, IAsyncDisposable
     public AddonHost(
         IAddonCatalog catalog,
         IServiceProvider services,
+        MaintenanceState maintenance,
         ILoggerFactory loggerFactory,
         ILogger<AddonHost> logger)
     {
         _catalog = catalog;
         _services = services;
+        _maintenance = maintenance;
         _loggerFactory = loggerFactory;
         _logger = logger;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var addons = await _catalog.ListAsync(enabledOnly: true, cancellationToken);
+        while (_maintenance.Current.BlocksRequests)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(200), stoppingToken);
+        }
+
+        var addons = await _catalog.ListAsync(enabledOnly: true, stoppingToken);
 
         foreach (var addon in addons)
         {
@@ -45,16 +55,27 @@ public sealed class AddonHost : IHostedService, IAsyncDisposable
 
             try
             {
-                await StartAddonAsync(addon, cancellationToken);
+                await StartAddonAsync(addon, stoppingToken);
             }
             catch (Exception exception)
             {
                 _logger.LogError(exception, "Could not start addon '{Addon}'.", addon.Id);
             }
         }
+
+        try
+        {
+            await Task.Delay(Timeout.Infinite, stoppingToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Host is shutting down.
+        }
+
+        await StopAddonsAsync(CancellationToken.None);
     }
 
-    public async Task StopAsync(CancellationToken cancellationToken)
+    private async Task StopAddonsAsync(CancellationToken cancellationToken)
     {
         for (var index = _loaded.Count - 1; index >= 0; index--)
         {
@@ -75,11 +96,6 @@ public sealed class AddonHost : IHostedService, IAsyncDisposable
         }
 
         _loaded.Clear();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await StopAsync(CancellationToken.None);
     }
 
     private async Task StartAddonAsync(AddonDescriptor descriptor, CancellationToken cancellationToken)

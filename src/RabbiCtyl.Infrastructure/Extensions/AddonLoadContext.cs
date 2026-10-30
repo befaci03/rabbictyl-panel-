@@ -7,10 +7,14 @@ namespace RabbiCtyl.Infrastructure.Extensions;
 
 internal sealed class AddonLoadContext : AssemblyLoadContext
 {
+    // Addons must see the same abstraction types as the host, otherwise their
+    // ILogger/IServiceProvider arguments would come from duplicate assemblies.
     private static readonly HashSet<string> SharedAssemblies = new(StringComparer.OrdinalIgnoreCase)
     {
         typeof(IAddon).Assembly.GetName().Name!,
         typeof(Entity).Assembly.GetName().Name!,
+        "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "Microsoft.Extensions.Logging.Abstractions",
     };
 
     private readonly AssemblyDependencyResolver _resolver;

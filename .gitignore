@@ -38,6 +38,9 @@ logs/
 node_modules/
 frontend/dist/
 
+# Compiled addon assemblies (built from src/RabbiCtyl.Addon.*)
+addons/*/lib/
+
 # Generated frontend and extension bundles
 src/RabbiCtyl.Web/wwwroot/assets/css/
 src/RabbiCtyl.Web/wwwroot/assets/js/

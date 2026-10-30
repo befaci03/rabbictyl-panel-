@@ -173,8 +173,7 @@
   "admin.games.source": "Source",
   "admin.games.fromNest": "Nest",
   "admin.games.fromPanel": "Panel",
-  "admin.games.nestReadOnly": "Read-only (edit the TOML file)",
-  "admin.games.nestHint": "Nests are TOML files in the nests/ folder. Every egg inside becomes a template and is read-only here.",
+  "admin.games.nestHint": "Nests are TOML files in the nests/ folder. Every egg inside becomes a template; editing one stores a panel copy and leaves the file untouched.",
   "admin.games.doneHint": "One pattern per line. Leave empty to mark the server running as soon as it boots.",
   "admin.oauth2": "OAuth2",
   "admin.oauth2.subtitle": "Sign-in providers handled by the OAuth2 add-on, server side.",
@@ -221,5 +220,8 @@
   "overview.empty": "No servers in this state.",
   "overview.close": "Close",
   "admin.addons": "Addons",
-  "admin.eyebrow": "Administration"
+  "admin.eyebrow": "Administration",
+  "admin.games.edit": "Edit",
+  "admin.games.save": "Save changes",
+  "admin.games.nestEditWarning": "This template comes from a nest TOML file. Saving stores a panel copy: converting panel changes back to TOML is lossy, so the file is left untouched."
 }

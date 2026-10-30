@@ -5,9 +5,9 @@ using RabbiCtyl.Core.Extensions;
 namespace RabbiCtyl.Infrastructure.Extensions;
 
 /// <summary>
-/// Merges nest files (read-only, TOML) with panel-created templates (database).
-/// Both expose the same <see cref="Egg"/> shape so creating a server only needs
-/// to call <see cref="FindAsync"/>.
+/// Merges nest files (TOML) with panel templates (database). Editing a nest egg
+/// stores a database copy with the same UUID that shadows the file version, so
+/// the TOML file itself is never rewritten.
 /// </summary>
 public sealed class GameTemplateCatalog : IGameTemplateCatalog
 {
@@ -22,6 +22,8 @@ public sealed class GameTemplateCatalog : IGameTemplateCatalog
 
     public async Task<IReadOnlyList<GameTemplate>> ListAsync(CancellationToken cancellationToken = default)
     {
+        var stored = (await _eggs.ListAsync(cancellationToken))
+            .ToDictionary(egg => egg.Uuid);
         var templates = new List<GameTemplate>();
         var seen = new HashSet<Guid>();
 
@@ -29,14 +31,18 @@ public sealed class GameTemplateCatalog : IGameTemplateCatalog
         {
             foreach (var egg in nest.Eggs)
             {
-                if (seen.Add(egg.Uuid))
+                if (!seen.Add(egg.Uuid))
                 {
-                    templates.Add(new GameTemplate(egg, nest.Id, nest.Name, FromNest: true));
+                    continue;
                 }
+
+                var effective = stored.GetValueOrDefault(egg.Uuid) ?? egg;
+
+                templates.Add(new GameTemplate(effective, nest.Id, nest.Name, FromNest: true));
             }
         }
 
-        foreach (var egg in await _eggs.ListAsync(cancellationToken))
+        foreach (var egg in stored.Values)
         {
             if (seen.Add(egg.Uuid))
             {
@@ -53,17 +59,17 @@ public sealed class GameTemplateCatalog : IGameTemplateCatalog
 
     public async Task<GameTemplate?> FindAsync(Guid uuid, CancellationToken cancellationToken = default)
     {
+        var stored = await _eggs.FindByUuidAsync(uuid, cancellationToken);
+
         foreach (var nest in await _nests.ListAsync(cancellationToken))
         {
-            var egg = nest.Eggs.FirstOrDefault(item => item.Uuid == uuid);
+            var nestEgg = nest.Eggs.FirstOrDefault(item => item.Uuid == uuid);
 
-            if (egg is not null)
+            if (nestEgg is not null)
             {
-                return new GameTemplate(egg, nest.Id, nest.Name, FromNest: true);
+                return new GameTemplate(stored ?? nestEgg, nest.Id, nest.Name, FromNest: true);
             }
         }
-
-        var stored = await _eggs.FindByUuidAsync(uuid, cancellationToken);
 
         return stored is null ? null : new GameTemplate(stored, null, null, FromNest: false);
     }

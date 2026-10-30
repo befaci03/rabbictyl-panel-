@@ -390,6 +390,60 @@ public sealed class AdminController : Controller
         return RedirectToAction(nameof(Games));
     }
 
+    [HttpPost("games/{uuid}/update")]
+    public async Task<IActionResult> UpdateGame(
+        string uuid,
+        UpdateGameTemplateForm form,
+        CancellationToken cancellationToken)
+    {
+        var template = Guid.TryParse(uuid, out var value)
+            ? await _templates.FindAsync(value, cancellationToken)
+            : null;
+
+        if (template is null)
+        {
+            return NotFound();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = FirstError("Check the game template and try again.");
+
+            return RedirectToAction(nameof(Games));
+        }
+
+        // Editing a nest template stores a panel copy that shadows the TOML egg.
+        // Converting panel changes back into TOML is lossy, so the file is never
+        // rewritten.
+        var egg = await _eggs.FindByUuidAsync(template.Egg.Uuid, cancellationToken);
+        var created = egg is null;
+
+        egg ??= EggTemplate.CopyOf(template.Egg);
+
+        egg.Name = form.Name.Trim();
+        egg.Description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim();
+        egg.Author = string.IsNullOrWhiteSpace(form.Author) ? string.Empty : form.Author.Trim();
+        egg.StartupCommand = form.Startup.Trim();
+        egg.DockerImage = form.Image.Trim();
+        egg.DockerImagesJson = System.Text.Json.JsonSerializer.Serialize(
+            new Dictionary<string, string> { ["default"] = form.Image.Trim() });
+
+        if (created)
+        {
+            await _eggs.AddAsync(egg, cancellationToken);
+        }
+        else
+        {
+            await _eggs.UpdateAsync(egg, cancellationToken);
+        }
+
+        TempData["Success"] = created && template.FromNest
+            ? $"Saved {egg.Name} as a panel copy. The nest file is unchanged."
+            : $"Updated game template {egg.Name}.";
+
+        return RedirectToAction(nameof(Games));
+    }
+
     [HttpGet("oauth2")]
     public async Task<IActionResult> OAuth2(CancellationToken cancellationToken)
     {
