@@ -104,18 +104,6 @@
                 </a>
             </div>
 
-            <button type="button"
-                    class="ptero-sidebar-expand"
-                    id="sidebar-expand"
-                    aria-controls="sidebar"
-                    aria-expanded="false"
-                    title="@L["nav.expand"]"
-                    aria-label="@L["nav.expand"]">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-                    <path d="M11 6l6 6-6 6M5 6l6 6-6 6" />
-                </svg>
-            </button>
-
             <div class="ptero-sidebar__scroll">
                 <div class="ptero-servers">
                     <span class="ptero-sidebar__heading">@L["nav.servers"]</span>
@@ -158,6 +146,19 @@
                 </div>
             </div>
         </aside>
+
+        <!-- Hangs on the outside edge of the sidebar, in the logo's spot. -->
+        <button type="button"
+                class="ptero-sidebar-expand"
+                id="sidebar-expand"
+                aria-controls="sidebar"
+                aria-expanded="false"
+                title="@L["nav.expand"]"
+                aria-label="@L["nav.expand"]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                <path d="M11 6l6 6-6 6M5 6l6 6-6 6" />
+            </svg>
+        </button>
 
         <div class="ptero-backdrop" data-sidebar-close aria-hidden="true"></div>
 

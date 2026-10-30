@@ -2,11 +2,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbiCtyl.Addons.Abstractions;
+using RabbiCtyl.Configuration.Options;
 using RabbiCtyl.Core.Abstractions;
+using RabbiCtyl.Core.Entities;
 using RabbiCtyl.Core.Extensions;
 using RabbiCtyl.Infrastructure.Maintenance;
 
 namespace RabbiCtyl.Infrastructure.Extensions;
+
+/// <summary>An administration tab provided by a running addon.</summary>
+public sealed record AddonAdminTab(string Slug, string Label, string AddonId);
 
 /// <summary>
 /// Loads enabled C# addons from their manifests at host startup. Each addon
@@ -18,22 +23,120 @@ public sealed class AddonHost : BackgroundService
     private readonly IAddonCatalog _catalog;
     private readonly IServiceProvider _services;
     private readonly MaintenanceState _maintenance;
+    private readonly PanelOptions _options;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<AddonHost> _logger;
     private readonly List<LoadedAddon> _loaded = [];
+    private readonly object _gate = new();
 
     public AddonHost(
         IAddonCatalog catalog,
         IServiceProvider services,
         MaintenanceState maintenance,
+        PanelOptions options,
         ILoggerFactory loggerFactory,
         ILogger<AddonHost> logger)
     {
         _catalog = catalog;
         _services = services;
         _maintenance = maintenance;
+        _options = options;
         _loggerFactory = loggerFactory;
         _logger = logger;
+    }
+
+    /// <summary>Administration tabs contributed by the running addons.</summary>
+    public IReadOnlyList<AddonAdminTab> AdminTabs
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _loaded
+                    .Where(loaded => loaded.Addon is IAddonAdminPage)
+                    .Select(loaded =>
+                    {
+                        var page = (IAddonAdminPage)loaded.Addon;
+                        return new AddonAdminTab(page.Slug, page.Label, loaded.Descriptor.Id);
+                    })
+                    .ToList();
+            }
+        }
+    }
+
+    public bool IsAddonRunning(string addonId)
+    {
+        lock (_gate)
+        {
+            return _loaded.Any(loaded =>
+                string.Equals(loaded.Descriptor.Id, addonId, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    public AddonAdminTab? FindAdminTab(string slug) =>
+        AdminTabs.FirstOrDefault(tab => string.Equals(tab.Slug, slug, StringComparison.OrdinalIgnoreCase));
+
+    public Task<AddonResponse?> HandleAdminAsync(
+        string slug,
+        AddonRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        IAddonAdminPage? page;
+
+        lock (_gate)
+        {
+            page = _loaded
+                .Select(loaded => loaded.Addon)
+                .OfType<IAddonAdminPage>()
+                .FirstOrDefault(candidate =>
+                    string.Equals(candidate.Slug, slug, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return page is null
+            ? Task.FromResult<AddonResponse?>(null)
+            : InvokeAsync(page.HandleAsync(request, cancellationToken));
+    }
+
+    public Task<AddonResponse?> HandleEndpointAsync(
+        string addonId,
+        AddonRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        IAddonEndpoint? endpoint;
+
+        lock (_gate)
+        {
+            endpoint = _loaded
+                .Where(loaded => string.Equals(loaded.Descriptor.Id, addonId, StringComparison.OrdinalIgnoreCase))
+                .Select(loaded => loaded.Addon)
+                .OfType<IAddonEndpoint>()
+                .FirstOrDefault();
+        }
+
+        return endpoint is null
+            ? Task.FromResult<AddonResponse?>(null)
+            : InvokeAsync(endpoint.HandleAsync(request, cancellationToken));
+    }
+
+    /// <summary>
+    /// True when the supplied account is locked by an addon (for example the
+    /// demo account while the Demo User addon is enabled).
+    /// </summary>
+    public string? ProtectionReason(User user)
+    {
+        lock (_gate)
+        {
+            foreach (var loaded in _loaded)
+            {
+                if (loaded.Addon is IAddonUserGuard guard &&
+                    guard.ProtectionReason(user) is { Length: > 0 } reason)
+                {
+                    return reason;
+                }
+            }
+        }
+
+        return null;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -77,25 +180,31 @@ public sealed class AddonHost : BackgroundService
 
     private async Task StopAddonsAsync(CancellationToken cancellationToken)
     {
-        for (var index = _loaded.Count - 1; index >= 0; index--)
+        LoadedAddon[] loaded;
+
+        lock (_gate)
         {
-            var loaded = _loaded[index];
+            loaded = _loaded.ToArray();
+            _loaded.Clear();
+        }
+
+        for (var index = loaded.Length - 1; index >= 0; index--)
+        {
+            var addon = loaded[index];
 
             try
             {
-                await loaded.Addon.ShutdownAsync(cancellationToken);
+                await addon.Addon.ShutdownAsync(cancellationToken);
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(exception, "Addon '{Addon}' failed while shutting down.", loaded.Addon.Id);
+                _logger.LogWarning(exception, "Addon '{Addon}' failed while shutting down.", addon.Addon.Id);
             }
             finally
             {
-                loaded.Context.Unload();
+                addon.Context.Unload();
             }
         }
-
-        _loaded.Clear();
     }
 
     private async Task StartAddonAsync(AddonDescriptor descriptor, CancellationToken cancellationToken)
@@ -116,19 +225,37 @@ public sealed class AddonHost : BackgroundService
                 $"Addon '{descriptor.Id}' entry type '{descriptor.Manifest.Entry}' could not be created.");
         }
 
+        var storageDirectory = Path.Combine(_options.Storage.Directory, "addons", descriptor.Id);
+
+        try
+        {
+            Directory.CreateDirectory(storageDirectory);
+        }
+        catch (IOException exception)
+        {
+            _logger.LogWarning(exception, "Could not create the storage directory for addon '{Addon}'.", descriptor.Id);
+        }
+
         var addonContext = new AddonContext
         {
             Manifest = descriptor.Manifest,
             Directory = descriptor.Directory,
+            StorageDirectory = storageDirectory,
             Services = _services,
             Logger = _loggerFactory.CreateLogger($"Addon.{descriptor.Id}"),
         };
 
         await addon.InitializeAsync(addonContext, cancellationToken);
 
-        _loaded.Add(new LoadedAddon(addon, context));
+        lock (_gate)
+        {
+            _loaded.Add(new LoadedAddon(descriptor, addon, context));
+        }
+
         _logger.LogInformation("Started addon '{Addon}' v{Version}.", descriptor.Id, descriptor.Manifest.Version);
     }
 
-    private sealed record LoadedAddon(IAddon Addon, AddonLoadContext Context);
+    private static async Task<AddonResponse?> InvokeAsync(Task<AddonResponse> task) => await task;
+
+    private sealed record LoadedAddon(AddonDescriptor Descriptor, IAddon Addon, AddonLoadContext Context);
 }

@@ -12,4 +12,10 @@ public sealed class PanelBranding
 
     /// <summary>File name inside the storage directory, or null for the bundled logo.</summary>
     public string? LogoFileName { get; set; }
+
+    /// <summary>When set, everyone but administrators sees the maintenance page.</summary>
+    public bool MaintenanceMode { get; set; }
+
+    /// <summary>Reason shown on the maintenance page.</summary>
+    public string? MaintenanceReason { get; set; }
 }

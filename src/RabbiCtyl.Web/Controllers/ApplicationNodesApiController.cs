@@ -9,6 +9,7 @@ using RabbiCtyl.Infrastructure.Pats;
 namespace RabbiCtyl.Web.Controllers;
 
 [ApiController]
+[IgnoreAntiforgeryToken]
 [Authorize(Roles = "admin")]
 [Route("api/application/nodes")]
 public sealed class ApplicationNodesApiController : ControllerBase

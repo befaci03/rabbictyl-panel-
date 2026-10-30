@@ -64,6 +64,10 @@ public sealed class FileSystemPanelBrandingStore : IPanelBrandingStore
             {
                 Name = string.IsNullOrWhiteSpace(branding.Name) ? Current.Name : branding.Name.Trim(),
                 HideSidebarLogo = branding.HideSidebarLogo,
+                MaintenanceMode = branding.MaintenanceMode,
+                MaintenanceReason = string.IsNullOrWhiteSpace(branding.MaintenanceReason)
+                    ? null
+                    : branding.MaintenanceReason.Trim(),
                 LogoFileName = Current.LogoFileName,
             },
             cancellationToken);
@@ -94,6 +98,8 @@ public sealed class FileSystemPanelBrandingStore : IPanelBrandingStore
             {
                 Name = Current.Name,
                 HideSidebarLogo = Current.HideSidebarLogo,
+                MaintenanceMode = Current.MaintenanceMode,
+                MaintenanceReason = Current.MaintenanceReason,
                 LogoFileName = fileName,
             },
             cancellationToken);
@@ -111,6 +117,8 @@ public sealed class FileSystemPanelBrandingStore : IPanelBrandingStore
             {
                 Name = Current.Name,
                 HideSidebarLogo = Current.HideSidebarLogo,
+                MaintenanceMode = Current.MaintenanceMode,
+                MaintenanceReason = Current.MaintenanceReason,
                 LogoFileName = null,
             },
             cancellationToken);
@@ -163,6 +171,8 @@ public sealed class FileSystemPanelBrandingStore : IPanelBrandingStore
             }
 
             _current.HideSidebarLogo = branding.HideSidebarLogo;
+            _current.MaintenanceMode = branding.MaintenanceMode;
+            _current.MaintenanceReason = branding.MaintenanceReason;
             _current.LogoFileName = branding.LogoFileName;
         }
         catch (JsonException exception)

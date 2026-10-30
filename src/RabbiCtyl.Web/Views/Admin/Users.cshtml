@@ -1,4 +1,4 @@
-@model IReadOnlyList<User>
+@model AdminUsersViewModel
 @{
     ViewData["Title"] = "Users";
 }
@@ -24,7 +24,7 @@
         <div class="alert alert--danger" role="alert">@error</div>
     }
 
-    <details class="card admin-create" @(Model.Count == 0 ? "open" : null)>
+    <details class="card admin-create" @(Model.Users.Count == 0 ? "open" : null)>
         <summary class="admin-create__summary">
             <span>
                 <strong>Create user</strong>
@@ -72,7 +72,7 @@
     </details>
 
     <section class="card card--flush">
-        @if (Model.Count == 0)
+        @if (Model.Users.Count == 0)
         {
             <div class="empty">
                 <p class="empty__title">No users yet</p>
@@ -94,11 +94,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                    @foreach (var user in Model)
+                    @foreach (var row in Model.Users)
                     {
+                        var user = row.User;
                         <tr>
                             <td>
-                                <span class="table__user" data-avatar-user="@user.Username">
+                                <span class="table__user">
                                     <span class="table__primary">@user.DisplayName</span>
                                 </span>
                             </td>
@@ -117,8 +118,26 @@
                             <td>@user.CreatedAt.ToString("yyyy-MM-dd")</td>
                             <td>
                                 <div class="table__actions">
-                                    <a class="button button--ghost button--sm"
-                                       asp-controller="Admin" asp-action="UserEdit" asp-route-id="@user.Id">Edit</a>
+                                    @if (row.BlockedReason is { Length: > 0 } blocked)
+                                    {
+                                        <button type="button"
+                                                class="button button--ghost button--sm"
+                                                disabled
+                                                title="@blocked">Blocked</button>
+                                    }
+                                    else
+                                    {
+                                        <a class="button button--ghost button--sm"
+                                           asp-controller="Admin" asp-action="UserEdit" asp-route-id="@user.Id">Edit</a>
+                                        <form method="post"
+                                              asp-controller="Admin"
+                                              asp-action="DeleteUser"
+                                              asp-route-id="@user.Id"
+                                              class="inline-form"
+                                              onsubmit="return confirm('Delete @user.Username? This cannot be undone.');">
+                                            <button type="submit" class="button button--ghost button--sm">Delete</button>
+                                        </form>
+                                    }
                                 </div>
                             </td>
                         </tr>

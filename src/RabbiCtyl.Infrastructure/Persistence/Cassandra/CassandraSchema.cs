@@ -50,6 +50,15 @@ internal static partial class CassandraSchema
             $"CREATE TABLE IF NOT EXISTS {keyspace}.eggs_by_uuid (" +
             "egg_uuid uuid PRIMARY KEY, id uuid)",
 
+            $"CREATE TABLE IF NOT EXISTS {keyspace}.allocations (" +
+            "id uuid PRIMARY KEY, data text)",
+
+            $"CREATE TABLE IF NOT EXISTS {keyspace}.allocations_by_node (" +
+            "node_id uuid, id uuid, data text, PRIMARY KEY (node_id, id))",
+
+            $"CREATE TABLE IF NOT EXISTS {keyspace}.allocations_by_address (" +
+            "node_id uuid, ip text, port int, id uuid, PRIMARY KEY (node_id, ip, port))",
+
             // _STATE_ keeps the schema version; the name is quoted because it
             // starts with an underscore.
             $"CREATE TABLE IF NOT EXISTS {keyspace}.\"_state_\" (" +

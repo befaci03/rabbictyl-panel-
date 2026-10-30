@@ -5,6 +5,8 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").match
 document.documentElement.classList.toggle("motion-ok", !reduceMotion);
 
 const shell = document.querySelector<HTMLElement>("#app-shell");
+import "./addon-api";
+
 const sidebarToggle = document.querySelector<HTMLButtonElement>("#sidebar-toggle");
 const mobileQuery = window.matchMedia("(max-width: 900px)");
 const collapseButton = document.querySelector<HTMLButtonElement>("#sidebar-collapse");

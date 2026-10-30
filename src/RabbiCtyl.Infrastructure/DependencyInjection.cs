@@ -47,9 +47,9 @@ public static class DependencyInjection
         services.AddSingleton<IPatsClientFactory, PatsClientFactory>();
         services.AddSingleton<ICaptchaVerifier, CaptchaVerifier>();
         services.AddSingleton<IEmailSender, Mail.SmtpEmailSender>();
-        services.AddSingleton<IOAuthProviderStore>(provider => new FileSystemOAuthProviderStore(
-            Path.Combine(options.Storage.Directory, "oauth2.json"),
-            provider.GetRequiredService<ILogger<FileSystemOAuthProviderStore>>()));
+        services.AddSingleton<IApiKeyStore>(provider => new FileSystemApiKeyStore(
+            Path.Combine(options.Storage.Directory, "api_keys.json"),
+            provider.GetRequiredService<ILogger<FileSystemApiKeyStore>>()));
 
         AddExtensions(services, options);
 
@@ -129,7 +129,10 @@ public static class DependencyInjection
         services.AddSingleton<MaintenanceState>();
         services.AddHostedService<DatabaseInitializationService>();
 
-        services.AddHostedService<AddonHost>();
+        // The web application also asks the host for admin tabs, addon pages and
+        // account guards, so register one shared instance and run it as a service.
+        services.AddSingleton<AddonHost>();
+        services.AddHostedService(provider => provider.GetRequiredService<AddonHost>());
     }
 
     private static void AddRelationalStores(IServiceCollection services)
@@ -138,6 +141,7 @@ public static class DependencyInjection
         services.AddScoped<IServerStore, EfServerStore>();
         services.AddScoped<INodeStore, EfNodeStore>();
         services.AddScoped<IEggStore, EfEggStore>();
+        services.AddScoped<IAllocationStore, EfAllocationStore>();
         services.AddScoped<IPanelStateStore, EfPanelStateStore>();
         services.AddScoped<IDatabaseInitializer, RelationalDatabaseInitializer>();
     }
@@ -160,6 +164,7 @@ public static class DependencyInjection
         services.AddScoped<IServerStore, MongoServerStore>();
         services.AddScoped<INodeStore, MongoNodeStore>();
         services.AddScoped<IEggStore, MongoEggStore>();
+        services.AddScoped<IAllocationStore, MongoAllocationStore>();
         services.AddScoped<IPanelStateStore, MongoPanelStateStore>();
         services.AddScoped<IDatabaseInitializer, MongoDatabaseInitializer>();
     }
@@ -180,6 +185,7 @@ public static class DependencyInjection
         services.AddScoped<IServerStore, CassandraServerStore>();
         services.AddScoped<INodeStore, CassandraNodeStore>();
         services.AddScoped<IEggStore, CassandraEggStore>();
+        services.AddScoped<IAllocationStore, CassandraAllocationStore>();
         services.AddScoped<IPanelStateStore, CassandraPanelStateStore>();
         services.AddScoped<IDatabaseInitializer, CassandraDatabaseInitializer>();
     }

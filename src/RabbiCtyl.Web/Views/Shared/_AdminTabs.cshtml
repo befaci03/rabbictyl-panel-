@@ -1,5 +1,8 @@
+@using RabbiCtyl.Infrastructure.Extensions
+@inject AddonHost AddonHost
 @{
     var current = ViewContext.RouteData.Values["action"]?.ToString();
+    var addonSlug = ViewData["AddonSlug"] as string;
 }
 
 <nav class="tabs" aria-label="@L["admin.eyebrow"]">
@@ -13,8 +16,14 @@
        asp-controller="Admin" asp-action="Users">@L["admin.users"]</a>
     <a class="tab @(current == "Games" ? "is-active" : string.Empty)"
        asp-controller="Admin" asp-action="Games">@L["admin.games"]</a>
-    <a class="tab @(current == "OAuth2" ? "is-active" : string.Empty)"
-       asp-controller="Admin" asp-action="OAuth2">@L["admin.oauth2"]</a>
+    <a class="tab @(current == "Rapi" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Rapi">@L["admin.rapi"]</a>
     <a class="tab @(current == "Addons" ? "is-active" : string.Empty)"
        asp-controller="Admin" asp-action="Addons">@L["admin.addons"]</a>
+    @foreach (var addonTab in AddonHost.AdminTabs)
+    {
+        var active = string.Equals(addonSlug, addonTab.Slug, StringComparison.OrdinalIgnoreCase);
+        <a class="tab @(active ? "is-active" : string.Empty)"
+           asp-controller="AdminAddon" asp-action="Page" asp-route-slug="@addonTab.Slug">@addonTab.Label</a>
+    }
 </nav>

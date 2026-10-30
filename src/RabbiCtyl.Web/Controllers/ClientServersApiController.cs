@@ -36,6 +36,12 @@ public sealed class ClientServersApiController : ControllerBase
 
     private bool IsAdmin => User.IsInRole("admin");
 
+    /// <summary>
+    /// Restricted servers keep running, but their owner may only use files,
+    /// console and server settings until an administrator lifts the restriction.
+    /// </summary>
+    private bool IsRestricted(Server server) => server.AccessRestricted && !IsAdmin;
+
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
     {
@@ -117,6 +123,11 @@ public sealed class ClientServersApiController : ControllerBase
         if (server.Suspended && request.Action is "start" or "restart")
         {
             return BadRequest(new { error = "Cannot start or restart a server that is suspended." });
+        }
+
+        if (IsRestricted(server))
+        {
+            return BadRequest(new { error = "Access to this server is temporarily restricted." });
         }
 
         await _pats.Create(node).PowerAsync(server.Uuid, request.Action, cancellationToken: cancellationToken);
@@ -402,6 +413,11 @@ public sealed class ClientServersApiController : ControllerBase
             return NotFound();
         }
 
+        if (IsRestricted(server))
+        {
+            return BadRequest(new { error = "Access to this server is temporarily restricted." });
+        }
+
         var backupUuid = Guid.NewGuid();
         await _pats.Create(node).CreateBackupAsync(server.Uuid, backupUuid, cancellationToken: cancellationToken);
 
@@ -421,6 +437,11 @@ public sealed class ClientServersApiController : ControllerBase
             return NotFound();
         }
 
+        if (IsRestricted(server))
+        {
+            return BadRequest(new { error = "Access to this server is temporarily restricted." });
+        }
+
         await _pats.Create(node).RestoreBackupAsync(server.Uuid, backup, cancellationToken: cancellationToken);
 
         return Accepted();
@@ -437,6 +458,11 @@ public sealed class ClientServersApiController : ControllerBase
         if (server is null || node is null || !Guid.TryParse(backupUuid, out var backup))
         {
             return NotFound();
+        }
+
+        if (IsRestricted(server))
+        {
+            return BadRequest(new { error = "Access to this server is temporarily restricted." });
         }
 
         await _pats.Create(node).DeleteBackupAsync(server.Uuid, backup, cancellationToken);
@@ -478,6 +504,11 @@ public sealed class ClientServersApiController : ControllerBase
             return NotFound();
         }
 
+        if (IsRestricted(server))
+        {
+            return BadRequest(new { error = "Access to this server is temporarily restricted." });
+        }
+
         server.Status = ServerStatus.Installing;
         await _servers.UpdateAsync(server, cancellationToken);
         await _pats.Create(node).ReinstallAsync(server.Uuid, cancellationToken);
@@ -493,6 +524,11 @@ public sealed class ClientServersApiController : ControllerBase
         if (server is null)
         {
             return NotFound();
+        }
+
+        if (IsRestricted(server))
+        {
+            return BadRequest(new { error = "Access to this server is temporarily restricted." });
         }
 
         return Ok(new
@@ -514,6 +550,11 @@ public sealed class ClientServersApiController : ControllerBase
         if (server is null || node is null)
         {
             return NotFound();
+        }
+
+        if (IsRestricted(server))
+        {
+            return BadRequest(new { error = "Access to this server is temporarily restricted." });
         }
 
         var environment = ParseEnvironment(server.EnvironmentJson);

@@ -23,8 +23,6 @@ public sealed class AuthController : Controller
     private readonly SecurityOptions _security;
     private readonly PanelOptions _panel;
     private readonly IEmailSender _mail;
-    private readonly IOAuthProviderStore _oauthProviders;
-    private readonly IAddonCatalog _addons;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
@@ -35,8 +33,6 @@ public sealed class AuthController : Controller
         SecurityOptions security,
         PanelOptions panel,
         IEmailSender mail,
-        IOAuthProviderStore oauthProviders,
-        IAddonCatalog addons,
         ILogger<AuthController> logger)
     {
         _users = users;
@@ -46,8 +42,6 @@ public sealed class AuthController : Controller
         _security = security;
         _panel = panel;
         _mail = mail;
-        _oauthProviders = oauthProviders;
-        _addons = addons;
         _logger = logger;
     }
 
@@ -65,24 +59,8 @@ public sealed class AuthController : Controller
         }
 
         ViewData["ReturnUrl"] = returnUrl;
-        ViewData["OAuthProviders"] = await OAuthProvidersAsync(cancellationToken);
 
         return View(new LoginViewModel());
-    }
-
-    private async Task<IReadOnlyList<OAuthProvider>> OAuthProvidersAsync(CancellationToken cancellationToken)
-    {
-        var enabledAddons = await _addons.ListAsync(enabledOnly: true, cancellationToken: cancellationToken);
-
-        if (!enabledAddons.Any(addon =>
-                string.Equals(addon.Id, "oauth2", StringComparison.OrdinalIgnoreCase)))
-        {
-            return [];
-        }
-
-        return (await _oauthProviders.ListAsync(cancellationToken))
-            .Where(provider => provider.Enabled && provider.IsConfigured)
-            .ToList();
     }
 
     [AllowAnonymous]

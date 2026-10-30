@@ -72,6 +72,15 @@ public sealed class ServerController : Controller
             ? section!.ToLowerInvariant()
             : "console";
 
+        // A restricted server keeps running, but its owner only reaches the
+        // console, files and server settings until an administrator lifts it.
+        var restricted = server.AccessRestricted && !User.IsInRole("admin");
+
+        if (restricted && normalizedSection is not ("console" or "files" or "settings"))
+        {
+            return Forbid();
+        }
+
         PatsServerState? state = null;
         string? logs = null;
         string? daemonError = null;
@@ -110,6 +119,7 @@ public sealed class ServerController : Controller
             Logs = logs,
             DaemonError = daemonError,
             Environment = ParseEnvironment(server.EnvironmentJson),
+            AccessRestricted = restricted,
         });
     }
 

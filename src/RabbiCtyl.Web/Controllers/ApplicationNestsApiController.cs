@@ -9,6 +9,7 @@ namespace RabbiCtyl.Web.Controllers;
 /// nest means editing the TOML file, so there is no write endpoint here.
 /// </summary>
 [ApiController]
+[IgnoreAntiforgeryToken]
 [Authorize(Roles = "admin")]
 [Route("api/application/nests")]
 public sealed class ApplicationNestsApiController : ControllerBase

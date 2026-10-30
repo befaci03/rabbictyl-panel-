@@ -1,0 +1,16 @@
+{
+  "id": "egg_banners",
+  "name": "Egg Banners",
+  "version": "1.0.0",
+  "description": "Attach a banner image to nest eggs. The banner for a server's egg is shown on that server's page. Enabled by default.",
+  "author": "RabbiCtyl",
+  "enabled": true,
+  "assembly": "lib/RabbiCtyl.Addon.EggBanners.dll",
+  "entry": "RabbiCtyl.Addon.EggBanners.EggBannersAddon",
+  "scripts": [
+    "scripts/banner.ts"
+  ],
+  "assets": {
+    "icon": "assets/icon.svg"
+  }
+}

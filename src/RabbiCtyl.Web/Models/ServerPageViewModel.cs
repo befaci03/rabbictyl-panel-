@@ -21,6 +21,9 @@ public sealed class ServerPageViewModel
 
     public string? DaemonError { get; init; }
 
+    /// <summary>True when an administrator restricted access for this viewer.</summary>
+    public bool AccessRestricted { get; init; }
+
     public IReadOnlyDictionary<string, string> Environment { get; init; } =
         new Dictionary<string, string>(StringComparer.Ordinal);
 }

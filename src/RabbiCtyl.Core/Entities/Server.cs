@@ -30,6 +30,12 @@ public sealed class Server : Entity
 
     public bool Suspended { get; set; }
 
+    /// <summary>
+    /// Temporary access restriction: the server keeps running, but its owner
+    /// can only reach the console, files and server settings.
+    /// </summary>
+    public bool AccessRestricted { get; set; }
+
     public bool SkipScripts { get; set; }
 
     // Build limits, using Pterodactyl's names and units (MiB / percent).

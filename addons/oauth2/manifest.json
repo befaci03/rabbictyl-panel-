@@ -5,6 +5,11 @@
   "description": "Server-side OAuth2 sign-in. Providers are managed in Administration \u2192 OAuth2.",
   "author": "RabbiCtyl",
   "enabled": true,
+  "assembly": "lib/RabbiCtyl.Addon.OAuth2.dll",
+  "entry": "RabbiCtyl.Addon.OAuth2.OAuth2Addon",
+  "scripts": [
+    "scripts/auth.ts"
+  ],
   "assets": {
     "icon": "assets/icon.svg"
   }

@@ -10,6 +10,9 @@ public sealed class AddonContext
 
     public required string Directory { get; init; }
 
+    /// <summary>Writable directory reserved for this addon.</summary>
+    public required string StorageDirectory { get; init; }
+
     public required IServiceProvider Services { get; init; }
 
     public required ILogger Logger { get; init; }

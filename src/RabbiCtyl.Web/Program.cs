@@ -28,6 +28,10 @@ builder.Services.AddControllersWithViews(mvc => mvc.Filters.Add(new AutoValidate
 builder.Services.AddSignalR().AddMessagePackProtocol();
 builder.Services.AddLocalization();
 builder.Services.AddScoped<IPanelLocalizer, PanelLocalizer>();
+builder.Services.AddHttpContextAccessor();
+// Generic bridge add-ons use to sign a resolved account in; the panel does not
+// know which add-on is calling.
+builder.Services.AddScoped<RabbiCtyl.Addons.Abstractions.IAddonAuthentication, RabbiCtyl.Web.Security.AddonAuthentication>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -92,6 +96,10 @@ app.UseRouting();
 app.UseMiddleware<DaemonAuthenticationMiddleware>();
 app.UseAntiforgery();
 app.UseAuthentication();
+// Serves the operator maintenance page to non-admins when enabled in General.
+app.UseMiddleware<OperatorMaintenanceMiddleware>();
+// RAPI keys let bots and external tools call /api/application without a cookie.
+app.UseMiddleware<ApplicationApiKeyMiddleware>();
 app.UseAuthorization();
 
 app.MapControllerRoute(

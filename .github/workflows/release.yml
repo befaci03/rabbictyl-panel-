@@ -79,10 +79,13 @@ jobs:
 
       - name: Include bundled add-on assemblies
         run: |
-          mkdir -p artifacts/rabbictyl/addons/demo_user
-          if [ -d addons/demo_user/lib ]; then
-            cp -R addons/demo_user/lib artifacts/rabbictyl/addons/demo_user/
-          fi
+          for addon in addons/*/; do
+            name="$(basename "$addon")"
+            if [ -d "$addon/lib" ]; then
+              mkdir -p "artifacts/rabbictyl/addons/$name"
+              cp -R "$addon/lib" "artifacts/rabbictyl/addons/$name/"
+            fi
+          done
 
       - name: Package the release
         run: |

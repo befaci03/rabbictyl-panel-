@@ -13,6 +13,7 @@
     }
 
     var isAdmin = User.Identity?.IsAuthenticated == true && User.IsInRole("admin");
+    var restrictedServer = currentServer is not null && currentServer.AccessRestricted && !isAdmin;
 
     string NavClass(string controllerName, string? actionName = null)
     {
@@ -84,7 +85,7 @@
             <span>@L["nav.files"]</span>
         </a>
 
-        <a class="@ServerNavClass("backups")"
+        <a class="@ServerNavClass("backups") @(restrictedServer ? "is-hidden" : string.Empty)"
            asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid" asp-route-section="backups"
            title="@L["nav.backups"]">
             <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
@@ -94,7 +95,7 @@
             <span>@L["nav.backups"]</span>
         </a>
 
-        <a class="@ServerNavClass("schedules")"
+        <a class="@ServerNavClass("schedules") @(restrictedServer ? "is-hidden" : string.Empty)"
            asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid" asp-route-section="schedules"
            title="@L["nav.schedules"]">
             <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
@@ -104,7 +105,7 @@
             <span>@L["nav.schedules"]</span>
         </a>
 
-        <a class="@ServerNavClass("users")"
+        <a class="@ServerNavClass("users") @(restrictedServer ? "is-hidden" : string.Empty)"
            asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid" asp-route-section="users"
            title="@L["nav.users"]">
             <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
@@ -114,7 +115,7 @@
             <span>@L["nav.users"]</span>
         </a>
 
-        <a class="@ServerNavClass("startup")"
+        <a class="@ServerNavClass("startup") @(restrictedServer ? "is-hidden" : string.Empty)"
            asp-controller="Server" asp-action="Index" asp-route-uuid="@currentServer.Uuid" asp-route-section="startup"
            title="@L["nav.startup"]">
             <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">

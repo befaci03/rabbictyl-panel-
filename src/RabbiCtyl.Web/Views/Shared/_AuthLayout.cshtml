@@ -1,5 +1,6 @@
 @inject IThemeState ThemeState
 @inject IThemeCatalog ThemeCatalog
+@inject IAddonCatalog AddonCatalog
 @{
     var activeTheme = await ThemeCatalog.FindAsync(ThemeState.ActiveThemeId);
     var panelName = Branding.Current.Name;
@@ -7,6 +8,7 @@
     var logoUrl = activeTheme is not null && activeTheme.AssetUrls.TryGetValue("logo", out var themeLogo)
         ? themeLogo
         : null;
+    var addonScripts = await AddonCatalog.ListAsync(enabledOnly: true);
 }
 <!DOCTYPE html>
 <html lang="en" data-theme="@(activeTheme?.Id ?? "default_dark")">
@@ -28,6 +30,13 @@
 <body class="auth-body" data-authenticated="false">
     @RenderBody()
     <script src="~/assets/js/app.js" asp-append-version="true"></script>
+    @foreach (var addon in addonScripts)
+    {
+        foreach (var script in addon.ScriptUrls)
+        {
+            <script type="module" src="@script"></script>
+        }
+    }
     @if (activeTheme is not null)
     {
         foreach (var script in activeTheme.ScriptUrls)

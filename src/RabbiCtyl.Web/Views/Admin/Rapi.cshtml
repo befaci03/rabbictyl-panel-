@@ -1,0 +1,175 @@
+@model AdminRapiViewModel
+@inject PanelOptions PanelOptions
+@{
+    ViewData["Title"] = L["admin.rapi"].ToString();
+    var panelUrl = PanelOptions.App.Url.TrimEnd('/');
+}
+
+<section class="page">
+    <header class="page__header">
+        <div>
+            <span class="eyebrow">@L["admin.eyebrow"]</span>
+            <h1 class="page__title">@L["admin.rapi"]</h1>
+            <p class="page__subtitle">Rabbit API: keys for bots and external tools, plus the credentials each node generated.</p>
+        </div>
+    </header>
+
+    <partial name="_AdminTabs" />
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert--success" role="status">@success</div>
+    }
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert--danger" role="alert">@error</div>
+    }
+
+    @if (TempData["NewKey"] is string newKey)
+    {
+        <div class="alert" role="status">
+            <strong>New API key</strong>
+            <p>Copy it now: it is stored hashed and cannot be shown again.</p>
+            <code class="api-key-token">@newKey</code>
+        </div>
+    }
+
+    <details class="card admin-create" @(Model.Keys.Count == 0 ? "open" : null)>
+        <summary class="admin-create__summary">
+            <span>
+                <strong>New application key</strong>
+                <span class="admin-create__hint">Grants administrator access to the application API.</span>
+            </span>
+            <span class="button button--primary button--sm">Create key</span>
+        </summary>
+        <div class="admin-create__body">
+            <form method="post" asp-controller="Admin" asp-action="CreateApiKey" class="form">
+                <div class="admin-create__grid">
+                    <div class="form__group">
+                        <label class="form__label" for="rapi-memo">Memo</label>
+                        <input class="form__input" id="rapi-memo" name="Memo" maxlength="191" placeholder="Discord bot" />
+                        <span class="form__hint">What this key is for; shown in the list.</span>
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="rapi-expiry">Expires in (days)</label>
+                        <input class="form__input" id="rapi-expiry" name="ExpiresInDays" type="number" min="0" max="3650" value="0" />
+                        <span class="form__hint">0 means the key never expires.</span>
+                    </div>
+                </div>
+
+                <div class="admin-create__actions">
+                    <button type="submit" class="button button--primary">Create key</button>
+                </div>
+            </form>
+        </div>
+    </details>
+
+    <section class="card card--flush">
+        @if (Model.Keys.Count == 0)
+        {
+            <div class="empty">
+                <p class="empty__title">No application keys</p>
+                <p class="empty__hint">Create one to let a bot or script manage the panel.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Memo</th>
+                            <th>Identifier</th>
+                            <th>Created</th>
+                            <th>Expires</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var key in Model.Keys)
+                    {
+                        <tr>
+                            <td class="table__primary">@(string.IsNullOrWhiteSpace(key.Memo) ? "Application key" : key.Memo)</td>
+                            <td><code>rbtl_@key.Identifier.…</code></td>
+                            <td>@key.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@(key.ExpiresAt is { } expiry ? expiry.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "Never")</td>
+                            <td>
+                                <form method="post"
+                                      asp-controller="Admin"
+                                      asp-action="DeleteApiKey"
+                                      asp-route-id="@key.Id"
+                                      class="inline-form">
+                                    <button type="submit" class="button button--ghost button--sm">Revoke</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="card card--flush">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title">Node credentials</h2>
+                <p class="card__subtitle">Generated when a node is created. pats uses them to talk to the panel.</p>
+            </div>
+            <span class="pill pill--muted">@Model.Nodes.Count</span>
+        </div>
+
+        @if (Model.Nodes.Count == 0)
+        {
+            <div class="empty">
+                <p class="empty__title">No nodes</p>
+                <p class="empty__hint">Add a node to generate its daemon credentials.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Node</th>
+                            <th>Token id</th>
+                            <th>Token</th>
+                            <th>Endpoint</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var node in Model.Nodes)
+                    {
+                        <tr>
+                            <td class="table__primary">@node.Name</td>
+                            <td><code>@node.DaemonTokenId</code></td>
+                            <td><code>@node.DaemonToken</code></td>
+                            <td><code>@(node.UseSsl ? "https" : "http")://@node.Fqdn:@node.DaemonPort</code></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="card">
+        <div class="card__header">
+            <div>
+                <h2 class="card__title">Using the API</h2>
+                <p class="card__subtitle">Send the key as a bearer token. Application keys act as an administrator.</p>
+            </div>
+        </div>
+        <pre class="api-example">curl -H "Authorization: Bearer rbtl_IDENTIFIER.SECRET" \
+  @panelUrl/api/application/servers
+
+# endpoints
+GET    /api/application/servers
+POST   /api/application/servers
+GET    /api/application/nodes
+GET    /api/application/eggs
+GET    /api/application/nests</pre>
+    </section>
+</section>

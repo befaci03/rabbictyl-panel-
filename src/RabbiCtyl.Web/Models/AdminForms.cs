@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using RabbiCtyl.Core.Entities;
+using RabbiCtyl.Core.Extensions;
 
 namespace RabbiCtyl.Web.Models;
 
@@ -55,8 +56,11 @@ public sealed class CreateServerForm
     [Required]
     public Guid OwnerId { get; set; }
 
-    /// <summary>Optional game template; when set its defaults replace the manual startup fields.</summary>
+    /// <summary>Optional nest egg; when set its defaults replace the manual startup fields.</summary>
     public Guid? EggUuid { get; set; }
+
+    /// <summary>Optional free allocation created from Administration → General.</summary>
+    public Guid? AllocationId { get; set; }
 
     [Required, StringLength(64, MinimumLength = 1)]
     public string Name { get; set; } = string.Empty;
@@ -192,6 +196,14 @@ public sealed class AdminUserEditViewModel
     public User User { get; init; } = new();
 }
 
+public sealed class AdminUsersViewModel
+{
+    public IReadOnlyList<AdminUserRow> Users { get; init; } = [];
+}
+
+/// <summary>One account plus the reason an addon blocks editing it, if any.</summary>
+public sealed record AdminUserRow(User User, string? BlockedReason);
+
 public sealed class GeneralSettingsForm
 {
     [Required, StringLength(64, MinimumLength = 1)]
@@ -202,4 +214,50 @@ public sealed class GeneralSettingsForm
     public bool RemoveLogo { get; set; }
 
     public IFormFile? Logo { get; set; }
+
+    public bool MaintenanceMode { get; set; }
+
+    [StringLength(500)]
+    public string? MaintenanceReason { get; set; }
+}
+
+public sealed class AdminGeneralViewModel
+{
+    public PanelBranding Branding { get; init; } = new();
+
+    public IReadOnlyList<Node> Nodes { get; init; } = [];
+
+    public IReadOnlyList<AdminAllocationRow> Allocations { get; init; } = [];
+}
+
+public sealed record AdminAllocationRow(Allocation Allocation, string NodeName, bool Assigned);
+
+public sealed class CreateAllocationsForm
+{
+    [Required]
+    public Guid NodeId { get; set; }
+
+    [Required, StringLength(45, MinimumLength = 1)]
+    public string Ip { get; set; } = "0.0.0.0";
+
+    /// <summary>Single ports and ranges, separated by spaces, commas or new lines.</summary>
+    [Required, StringLength(20_000, MinimumLength = 1)]
+    public string Ports { get; set; } = string.Empty;
+}
+
+public sealed class CreateApiKeyForm
+{
+    [StringLength(191)]
+    public string? Memo { get; set; }
+
+    /// <summary>Zero means the key never expires.</summary>
+    [Range(0, 3650)]
+    public int ExpiresInDays { get; set; }
+}
+
+public sealed class AdminRapiViewModel
+{
+    public IReadOnlyList<ApiKey> Keys { get; init; } = [];
+
+    public IReadOnlyList<Node> Nodes { get; init; } = [];
 }

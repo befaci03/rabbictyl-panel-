@@ -93,6 +93,7 @@ code {
 // Shell ---------------------------------------------------------------------
 
 .app-shell {
+  position: relative;
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   min-height: 100vh;
@@ -147,7 +148,7 @@ code {
 .app-shell.is-compact .sidebar-expand {
   position: absolute;
   top: 12px;
-  right: -13px;
+  left: calc(var(--sidebar-width) - 13px);
   z-index: 5;
   display: inline-flex;
   align-items: center;
@@ -2090,7 +2091,7 @@ code {
 .ptero-shell.is-compact .ptero-sidebar-expand {
   position: absolute;
   top: 12px;
-  right: -13px;
+  left: calc(76px - 13px);
   z-index: 5;
   display: inline-flex;
   align-items: center;
@@ -2946,4 +2947,81 @@ dialog.modal::backdrop {
   max-height: min(70vh, 620px);
   overflow: auto;
   padding: 18px;
+}
+
+// Addon pages, banners and keys ----------------------------------------------
+
+.ptero-shell {
+  position: relative;
+}
+
+.addon-page {
+  display: grid;
+  gap: 20px;
+}
+
+.server-banner {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.server-banner:empty {
+  display: none;
+}
+
+.server-banner img {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+}
+
+.egg-banner-preview {
+  max-width: 180px;
+  max-height: 70px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.api-key-token {
+  display: block;
+  padding: 10px 12px;
+  margin-top: 8px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  word-break: break-all;
+}
+
+.api-example {
+  margin: 0;
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+// Add-on API toasts ----------------------------------------------------------
+
+.addon-toasts {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 60;
+  display: grid;
+  gap: 8px;
+}
+
+.addon-toast {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 25%);
+  font-size: 0.9rem;
 }

@@ -5,7 +5,9 @@ using RabbiCtyl.Configuration.Options;
 using RabbiCtyl.Core.Abstractions;
 using RabbiCtyl.Core.Entities;
 using RabbiCtyl.Core.Extensions;
+using RabbiCtyl.Infrastructure.Extensions;
 using RabbiCtyl.Infrastructure.Pats;
+using RabbiCtyl.Web.Middleware;
 using RabbiCtyl.Web.Models;
 using RabbiCtyl.Web.Security;
 
@@ -15,17 +17,22 @@ namespace RabbiCtyl.Web.Controllers;
 [Route("admin")]
 public sealed class AdminController : Controller
 {
+    private static readonly string[] AllowedLogoExtensions =
+        [".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".avif", ".jxl"];
+
     private readonly IUserStore _users;
     private readonly IServerStore _servers;
     private readonly INodeStore _nodes;
     private readonly IEggStore _eggs;
     private readonly IGameTemplateCatalog _templates;
-    private readonly IOAuthProviderStore _oauth;
+    private readonly IAllocationStore _allocations;
+    private readonly IApiKeyStore _apiKeys;
     private readonly IAddonCatalog _addons;
     private readonly IAddonState _addonState;
     private readonly IPanelBrandingStore _branding;
     private readonly IPatsClientFactory _pats;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly AddonHost _addonHost;
     private readonly PanelOptions _options;
     private readonly ILogger<AdminController> _logger;
 
@@ -35,12 +42,14 @@ public sealed class AdminController : Controller
         INodeStore nodes,
         IEggStore eggs,
         IGameTemplateCatalog templates,
-        IOAuthProviderStore oauth,
+        IAllocationStore allocations,
+        IApiKeyStore apiKeys,
         IAddonCatalog addons,
         IAddonState addonState,
         IPanelBrandingStore branding,
         IPatsClientFactory pats,
         IPasswordHasher passwordHasher,
+        AddonHost addonHost,
         PanelOptions options,
         ILogger<AdminController> logger)
     {
@@ -49,12 +58,14 @@ public sealed class AdminController : Controller
         _nodes = nodes;
         _eggs = eggs;
         _templates = templates;
-        _oauth = oauth;
+        _allocations = allocations;
+        _apiKeys = apiKeys;
         _addons = addons;
         _addonState = addonState;
         _branding = branding;
         _pats = pats;
         _passwordHasher = passwordHasher;
+        _addonHost = addonHost;
         _options = options;
         _logger = logger;
     }
@@ -136,8 +147,17 @@ public sealed class AdminController : Controller
     }
 
     [HttpGet("users")]
-    public async Task<IActionResult> Users(CancellationToken cancellationToken) =>
-        View(await _users.ListAsync(cancellationToken));
+    public async Task<IActionResult> Users(CancellationToken cancellationToken)
+    {
+        var users = await _users.ListAsync(cancellationToken);
+
+        return View(new AdminUsersViewModel
+        {
+            Users = users
+                .Select(user => new AdminUserRow(user, _addonHost.ProtectionReason(user)))
+                .ToList(),
+        });
+    }
 
     [HttpPost("users/create")]
     public async Task<IActionResult> CreateUser(
@@ -154,14 +174,8 @@ public sealed class AdminController : Controller
             return RedirectToAction(nameof(Users));
         }
 
-        if (await _users.FindByLoginAsync(username, cancellationToken) is not null)
-        {
-            TempData["Error"] = "That username or email is already in use.";
-
-            return RedirectToAction(nameof(Users));
-        }
-
-        if (await _users.FindByLoginAsync(email, cancellationToken) is not null)
+        if (await _users.FindByLoginAsync(username, cancellationToken) is not null ||
+            await _users.FindByLoginAsync(email, cancellationToken) is not null)
         {
             TempData["Error"] = "That username or email is already in use.";
 
@@ -190,9 +204,19 @@ public sealed class AdminController : Controller
     {
         var user = await _users.FindByIdAsync(id, cancellationToken);
 
-        return user is null
-            ? NotFound()
-            : View(new AdminUserEditViewModel { User = user });
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        if (_addonHost.ProtectionReason(user) is { } reason)
+        {
+            TempData["Error"] = reason;
+
+            return RedirectToAction(nameof(Users));
+        }
+
+        return View(new AdminUserEditViewModel { User = user });
     }
 
     [HttpPost("users/{id:guid}/update")]
@@ -206,6 +230,13 @@ public sealed class AdminController : Controller
         if (user is null)
         {
             return NotFound();
+        }
+
+        if (_addonHost.ProtectionReason(user) is { } protection)
+        {
+            TempData["Error"] = protection;
+
+            return RedirectToAction(nameof(Users));
         }
 
         if (!ModelState.IsValid)
@@ -255,8 +286,67 @@ public sealed class AdminController : Controller
         return RedirectToAction(nameof(Users));
     }
 
+    [HttpPost("users/{id:guid}/delete")]
+    public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
+    {
+        var user = await _users.FindByIdAsync(id, cancellationToken);
+
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        if (User.GetUserId() == user.Id)
+        {
+            TempData["Error"] = "You cannot delete your own account.";
+
+            return RedirectToAction(nameof(Users));
+        }
+
+        if (_addonHost.ProtectionReason(user) is { } protection)
+        {
+            TempData["Error"] = protection;
+
+            return RedirectToAction(nameof(Users));
+        }
+
+        var ownsServers = (await _servers.ListAsync(cancellationToken))
+            .Any(server => server.OwnerId == user.Id);
+
+        if (ownsServers)
+        {
+            TempData["Error"] =
+                $"{user.Username} still owns servers. Transfer or delete those servers first.";
+
+            return RedirectToAction(nameof(Users));
+        }
+
+        await _users.DeleteAsync(user, cancellationToken);
+
+        TempData["Success"] = $"Deleted account {user.Username}.";
+
+        return RedirectToAction(nameof(Users));
+    }
+
     [HttpGet("general")]
-    public IActionResult General() => View(_branding.Current);
+    public async Task<IActionResult> General(CancellationToken cancellationToken)
+    {
+        var nodes = await _nodes.ListAsync(cancellationToken);
+        var allocations = await _allocations.ListAsync(cancellationToken);
+        var nodeNames = nodes.ToDictionary(node => node.Id, node => node.Name);
+
+        return View(new AdminGeneralViewModel
+        {
+            Branding = _branding.Current,
+            Nodes = nodes,
+            Allocations = allocations
+                .Select(allocation => new AdminAllocationRow(
+                    allocation,
+                    nodeNames.GetValueOrDefault(allocation.NodeId) ?? "Unknown node",
+                    allocation.ServerId is not null))
+                .ToList(),
+        });
+    }
 
     [HttpPost("general")]
     public async Task<IActionResult> General(
@@ -275,26 +365,12 @@ public sealed class AdminController : Controller
             await _branding.RemoveLogoAsync(cancellationToken);
         }
 
-        if (form.Logo is { Length: > 0 } logo)
+        if (form.Logo is { Length: > 0 } logo &&
+            await StoreLogoAsync(logo, cancellationToken) is { } logoError)
         {
-            var extension = Path.GetExtension(logo.FileName).ToLowerInvariant();
+            TempData["Error"] = logoError;
 
-            if (!AllowedLogoExtensions.Contains(extension))
-            {
-                TempData["Error"] = "The logo must be a PNG, JPEG, WebP, GIF or SVG image.";
-
-                return RedirectToAction(nameof(General));
-            }
-
-            if (logo.Length > 2 * 1024 * 1024)
-            {
-                TempData["Error"] = "The logo must be 2 MB or smaller.";
-
-                return RedirectToAction(nameof(General));
-            }
-
-            await using var stream = logo.OpenReadStream();
-            await _branding.SaveLogoAsync(stream, extension, cancellationToken);
+            return RedirectToAction(nameof(General));
         }
 
         await _branding.SaveAsync(
@@ -302,16 +378,101 @@ public sealed class AdminController : Controller
             {
                 Name = string.IsNullOrWhiteSpace(form.Name) ? _options.App.Name : form.Name.Trim(),
                 HideSidebarLogo = form.HideSidebarLogo,
+                MaintenanceMode = form.MaintenanceMode,
+                MaintenanceReason = string.IsNullOrWhiteSpace(form.MaintenanceReason)
+                    ? null
+                    : form.MaintenanceReason.Trim(),
             },
             cancellationToken);
 
-        TempData["Success"] = "Panel branding updated.";
+        TempData["Success"] = form.MaintenanceMode
+            ? "Saved. Maintenance mode is on for everyone except administrators."
+            : "Panel branding updated.";
 
         return RedirectToAction(nameof(General));
     }
 
-    private static readonly string[] AllowedLogoExtensions =
-        [".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"];
+    [HttpPost("general/allocations")]
+    public async Task<IActionResult> CreateAllocations(
+        CreateAllocationsForm form,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = FirstError("Check the allocation details and try again.");
+
+            return RedirectToAction(nameof(General));
+        }
+
+        var node = await _nodes.FindByIdAsync(form.NodeId, cancellationToken);
+
+        if (node is null)
+        {
+            TempData["Error"] = "The selected node does not exist.";
+
+            return RedirectToAction(nameof(General));
+        }
+
+        var (ports, error) = ParsePorts(form.Ports);
+
+        if (error is not null)
+        {
+            TempData["Error"] = error;
+
+            return RedirectToAction(nameof(General));
+        }
+
+        var ip = form.Ip.Trim();
+        var existing = await _allocations.ListForNodeAsync(node.Id, cancellationToken);
+        var taken = existing
+            .Where(allocation => string.Equals(allocation.Ip, ip, StringComparison.OrdinalIgnoreCase))
+            .Select(allocation => allocation.Port)
+            .ToHashSet();
+
+        var additions = ports
+            .Distinct()
+            .Where(port => !taken.Contains(port))
+            .Select(port => new Allocation { NodeId = node.Id, Ip = ip, Port = port })
+            .ToList();
+
+        if (additions.Count == 0)
+        {
+            TempData["Error"] = "Every requested port already exists on this node.";
+
+            return RedirectToAction(nameof(General));
+        }
+
+        await _allocations.AddRangeAsync(additions, cancellationToken);
+
+        TempData["Success"] = $"Added {additions.Count} allocation(s) to {node.Name}.";
+
+        return RedirectToAction(nameof(General));
+    }
+
+    [HttpPost("general/allocations/{id:guid}/delete")]
+    public async Task<IActionResult> DeleteAllocation(Guid id, CancellationToken cancellationToken)
+    {
+        var allocation = (await _allocations.ListAsync(cancellationToken))
+            .FirstOrDefault(candidate => candidate.Id == id);
+
+        if (allocation is null)
+        {
+            return NotFound();
+        }
+
+        if (allocation.ServerId is not null)
+        {
+            TempData["Error"] = "That allocation is assigned to a server.";
+
+            return RedirectToAction(nameof(General));
+        }
+
+        await _allocations.DeleteAsync(allocation, cancellationToken);
+
+        TempData["Success"] = $"Removed allocation {allocation.Ip}:{allocation.Port}.";
+
+        return RedirectToAction(nameof(General));
+    }
 
     [HttpGet("servers")]
     public async Task<IActionResult> Servers(CancellationToken cancellationToken)
@@ -325,6 +486,10 @@ public sealed class AdminController : Controller
             Nodes = nodes.Values.OrderBy(node => node.Name).ToList(),
             Users = users.Values.OrderBy(user => user.DisplayName).ToList(),
             Eggs = await _templates.ListAsync(cancellationToken),
+            FreeAllocations = (await _allocations.ListAsync(cancellationToken))
+                .Where(allocation => allocation.ServerId is null)
+                .OrderBy(allocation => allocation.Port)
+                .ToList(),
             Servers = servers
                 .Select(server => new AdminServerRow(
                     server,
@@ -375,14 +540,23 @@ public sealed class AdminController : Controller
 
             if (egg is null)
             {
-                TempData["Error"] = "The selected game template does not exist.";
+                TempData["Error"] = "The selected nest egg does not exist.";
 
                 return RedirectToAction(nameof(Servers));
             }
         }
         else if (string.IsNullOrWhiteSpace(form.Startup) || string.IsNullOrWhiteSpace(form.Image))
         {
-            TempData["Error"] = "Pick a game template or provide a startup command and container image.";
+            TempData["Error"] = "Pick a nest egg or provide a startup command and container image.";
+
+            return RedirectToAction(nameof(Servers));
+        }
+
+        var allocated = await ResolveAllocationAsync(node, form, cancellationToken);
+
+        if (allocated.Error is not null)
+        {
+            TempData["Error"] = allocated.Error;
 
             return RedirectToAction(nameof(Servers));
         }
@@ -397,12 +571,12 @@ public sealed class AdminController : Controller
             MemoryLimitMb = form.MemoryMb,
             DiskLimitMb = form.DiskMb,
             CpuLimitPercent = form.CpuLimitPercent,
-            AllocationIp = form.AllocationIp.Trim(),
-            AllocationPort = form.AllocationPort,
+            AllocationIp = allocated.Allocation.Ip,
+            AllocationPort = allocated.Allocation.Port,
             StartupCommand = form.Startup.Trim(),
             Image = form.Image.Trim(),
             AllocationMappingsJson = System.Text.Json.JsonSerializer.Serialize(
-                new Dictionary<string, int[]> { [form.AllocationIp.Trim()] = [form.AllocationPort] }),
+                new Dictionary<string, int[]> { [allocated.Allocation.Ip] = [allocated.Allocation.Port] }),
             Status = ServerStatus.Installing,
         };
 
@@ -429,12 +603,15 @@ public sealed class AdminController : Controller
 
         await _servers.AddAsync(server, cancellationToken);
 
+        allocated.Allocation.ServerId = server.Id;
+        await _allocations.UpdateAsync(allocated.Allocation, cancellationToken);
+
         try
         {
             await _pats.Create(node).CreateServerAsync(server.Uuid, cancellationToken: cancellationToken);
 
             TempData["Success"] =
-                $"Created {server.Name} on {node.Name}. pats is installing it now.";
+                $"Created {server.Name} on {node.Name} with allocation {allocated.Allocation.Ip}:{allocated.Allocation.Port}. pats is installing it now.";
         }
         catch (Exception exception) when (exception is PatsApiException or HttpRequestException or TaskCanceledException)
         {
@@ -461,7 +638,7 @@ public sealed class AdminController : Controller
     {
         if (!ModelState.IsValid)
         {
-            TempData["Error"] = FirstError("Check the game template and try again.");
+            TempData["Error"] = FirstError("Check the nest egg and try again.");
 
             return RedirectToAction(nameof(Games));
         }
@@ -488,7 +665,7 @@ public sealed class AdminController : Controller
 
         await _eggs.AddAsync(egg, cancellationToken);
 
-        TempData["Success"] = $"Added game template {egg.Name}.";
+        TempData["Success"] = $"Added nest egg {egg.Name}.";
 
         return RedirectToAction(nameof(Games));
     }
@@ -517,7 +694,7 @@ public sealed class AdminController : Controller
 
         await _eggs.DeleteAsync(egg, cancellationToken);
 
-        TempData["Success"] = $"Deleted game template {egg.Name}.";
+        TempData["Success"] = $"Deleted nest egg {egg.Name}.";
 
         return RedirectToAction(nameof(Games));
     }
@@ -539,13 +716,13 @@ public sealed class AdminController : Controller
 
         if (!ModelState.IsValid)
         {
-            TempData["Error"] = FirstError("Check the game template and try again.");
+            TempData["Error"] = FirstError("Check the nest egg and try again.");
 
             return RedirectToAction(nameof(Games));
         }
 
         // Editing a nest template stores a panel copy that shadows the TOML egg.
-        // Converting panel changes back into TOML is lossy, so the file is never
+        // Converting panel changes back to TOML is lossy, so the file is never
         // rewritten.
         var egg = await _eggs.FindByUuidAsync(template.Egg.Uuid, cancellationToken);
         var created = egg is null;
@@ -571,129 +748,70 @@ public sealed class AdminController : Controller
 
         TempData["Success"] = created && template.FromNest
             ? $"Saved {egg.Name} as a panel copy. The nest file is unchanged."
-            : $"Updated game template {egg.Name}.";
+            : $"Updated nest egg {egg.Name}.";
 
         return RedirectToAction(nameof(Games));
     }
 
-    [HttpGet("oauth2")]
-    public async Task<IActionResult> OAuth2(CancellationToken cancellationToken)
-    {
-        var enabledAddons = await _addons.ListAsync(enabledOnly: true, cancellationToken: cancellationToken);
-
-        return View(new OAuthAdminViewModel
+    [HttpGet("rapi")]
+    public async Task<IActionResult> Rapi(CancellationToken cancellationToken) =>
+        View(new AdminRapiViewModel
         {
-            Providers = await _oauth.ListAsync(cancellationToken),
-            AddonEnabled = enabledAddons.Any(addon =>
-                string.Equals(addon.Id, "oauth2", StringComparison.OrdinalIgnoreCase)),
+            Keys = await _apiKeys.ListAsync(cancellationToken),
+            Nodes = await _nodes.ListAsync(cancellationToken),
         });
-    }
 
-    [HttpPost("oauth2/create")]
-    public async Task<IActionResult> CreateOAuthProvider(
-        OAuthProviderForm form,
+    [HttpPost("rapi/create")]
+    public async Task<IActionResult> CreateApiKey(
+        CreateApiKeyForm form,
         CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
-            TempData["Error"] = FirstError("Check the OAuth2 provider details and try again.");
+            TempData["Error"] = FirstError("Check the API key details and try again.");
 
-            return RedirectToAction(nameof(OAuth2));
+            return RedirectToAction(nameof(Rapi));
         }
 
-        var id = form.Id.Trim().ToLowerInvariant();
+        var identifier = RandomToken(8);
+        var secret = RandomToken(24);
+        var userId = User.GetUserId() ?? Guid.Empty;
 
-        if (await _oauth.FindAsync(id, cancellationToken) is not null)
-        {
-            TempData["Error"] = $"A provider with the id '{id}' already exists.";
-
-            return RedirectToAction(nameof(OAuth2));
-        }
-
-        await _oauth.SaveAsync(
-            new OAuthProvider
+        await _apiKeys.AddAsync(
+            new ApiKey
             {
-                Id = id,
-                Name = form.Name.Trim(),
-                ClientId = form.ClientId.Trim(),
-                ClientSecret = form.ClientSecret.Trim(),
-                AuthorizeUrl = form.AuthorizeUrl.Trim(),
-                TokenUrl = form.TokenUrl.Trim(),
-                UserInfoUrl = form.UserInfoUrl.Trim(),
-                Scopes = form.Scopes.Trim(),
-                UserIdField = form.UserIdField.Trim(),
-                EmailField = form.EmailField.Trim(),
-                UsernameField = form.UsernameField.Trim(),
-                DisplayNameField = form.DisplayNameField.Trim(),
-                Enabled = form.Enabled,
+                UserId = userId,
+                Identifier = identifier,
+                TokenHash = ApplicationApiKeyMiddleware.Hash(secret),
+                Memo = string.IsNullOrWhiteSpace(form.Memo) ? null : form.Memo.Trim(),
+                ExpiresAt = form.ExpiresInDays > 0
+                    ? DateTimeOffset.UtcNow.AddDays(form.ExpiresInDays)
+                    : null,
             },
             cancellationToken);
 
-        TempData["Success"] = $"Added the {form.Name} sign-in provider.";
+        TempData["NewKey"] = $"rbtl_{identifier}.{secret}";
+        TempData["Success"] = "API key created. Copy it now: it is not shown again.";
 
-        return RedirectToAction(nameof(OAuth2));
+        return RedirectToAction(nameof(Rapi));
     }
 
-    [HttpPost("oauth2/{id}/update")]
-    public async Task<IActionResult> UpdateOAuthProvider(
-        string id,
-        OAuthProviderEditForm form,
-        CancellationToken cancellationToken)
+    [HttpPost("rapi/{id:guid}/delete")]
+    public async Task<IActionResult> DeleteApiKey(Guid id, CancellationToken cancellationToken)
     {
-        var provider = await _oauth.FindAsync(id, cancellationToken);
+        var key = (await _apiKeys.ListAsync(cancellationToken))
+            .FirstOrDefault(candidate => candidate.Id == id);
 
-        if (provider is null)
+        if (key is null)
         {
             return NotFound();
         }
 
-        if (!ModelState.IsValid)
-        {
-            TempData["Error"] = FirstError("Check the OAuth2 provider details and try again.");
+        await _apiKeys.DeleteAsync(key, cancellationToken);
 
-            return RedirectToAction(nameof(OAuth2));
-        }
+        TempData["Success"] = "API key revoked.";
 
-        provider.Name = form.Name.Trim();
-        provider.ClientId = form.ClientId.Trim();
-
-        if (!string.IsNullOrWhiteSpace(form.ClientSecret))
-        {
-            provider.ClientSecret = form.ClientSecret.Trim();
-        }
-
-        provider.AuthorizeUrl = form.AuthorizeUrl.Trim();
-        provider.TokenUrl = form.TokenUrl.Trim();
-        provider.UserInfoUrl = form.UserInfoUrl.Trim();
-        provider.Scopes = form.Scopes.Trim();
-        provider.UserIdField = form.UserIdField.Trim();
-        provider.EmailField = form.EmailField.Trim();
-        provider.UsernameField = form.UsernameField.Trim();
-        provider.DisplayNameField = form.DisplayNameField.Trim();
-        provider.Enabled = form.Enabled;
-
-        await _oauth.SaveAsync(provider, cancellationToken);
-
-        TempData["Success"] = $"Updated the {provider.Name} sign-in provider.";
-
-        return RedirectToAction(nameof(OAuth2));
-    }
-
-    [HttpPost("oauth2/{id}/delete")]
-    public async Task<IActionResult> DeleteOAuthProvider(string id, CancellationToken cancellationToken)
-    {
-        var provider = await _oauth.FindAsync(id, cancellationToken);
-
-        if (provider is null)
-        {
-            return NotFound();
-        }
-
-        await _oauth.DeleteAsync(provider.Id, cancellationToken);
-
-        TempData["Success"] = $"Removed the {provider.Name} sign-in provider.";
-
-        return RedirectToAction(nameof(OAuth2));
+        return RedirectToAction(nameof(Rapi));
     }
 
     [HttpGet("addons")]
@@ -728,6 +846,190 @@ public sealed class AdminController : Controller
         return RedirectToAction(nameof(Addons));
     }
 
+    private async Task<string?> StoreLogoAsync(IFormFile logo, CancellationToken cancellationToken)
+    {
+        var extension = Path.GetExtension(logo.FileName).ToLowerInvariant();
+
+        if (!AllowedLogoExtensions.Contains(extension))
+        {
+            return "The logo must be a PNG, JPEG, WebP, GIF, SVG, AVIF or JPEG XL image.";
+        }
+
+        if (logo.Length > 2 * 1024 * 1024)
+        {
+            return "The logo must be 2 MB or smaller.";
+        }
+
+        // The image is stored exactly as uploaded; the panel serves its own content
+        // type for every accepted format, SVG included.
+        await using var stream = logo.OpenReadStream();
+        await _branding.SaveLogoAsync(stream, extension, cancellationToken);
+
+        return null;
+    }
+
+    private async Task<AllocationResult> ResolveAllocationAsync(
+        Node node,
+        CreateServerForm form,
+        CancellationToken cancellationToken)
+    {
+        if (form.AllocationId is { } allocationId && allocationId != Guid.Empty)
+        {
+            var chosen = (await _allocations.ListAsync(cancellationToken))
+                .FirstOrDefault(allocation => allocation.Id == allocationId);
+
+            if (chosen is null || chosen.NodeId != node.Id)
+            {
+                return AllocationResult.Failed("Pick an allocation that belongs to this node.");
+            }
+
+            return chosen.ServerId is not null
+                ? AllocationResult.Failed($"{chosen.Ip}:{chosen.Port} is already assigned to a server.")
+                : AllocationResult.Success(chosen);
+        }
+
+        var ip = form.AllocationIp.Trim();
+        var allocation = await _allocations.FindAsync(node.Id, ip, form.AllocationPort, cancellationToken);
+
+        if (allocation is { ServerId: not null })
+        {
+            return AllocationResult.Failed($"{ip}:{form.AllocationPort} is already assigned to a server.");
+        }
+
+        if (allocation is null)
+        {
+            allocation = new Allocation { NodeId = node.Id, Ip = ip, Port = form.AllocationPort };
+            await _allocations.AddRangeAsync([allocation], cancellationToken);
+        }
+
+        return AllocationResult.Success(allocation);
+    }
+
+    private static (List<int> Ports, string? Error) ParsePorts(string input)
+    {
+        var ports = new List<int>();
+
+        foreach (var token in input.Split(
+                     [',', ';', ' ', '\n', '\r', '\t'],
+                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var separator = token.IndexOf('-');
+
+            if (separator > 0)
+            {
+                if (!int.TryParse(token[..separator], out var start) ||
+                    !int.TryParse(token[(separator + 1)..], out var end))
+                {
+                    return ([], $"'{token}' is not a port or a range.");
+                }
+
+                if (start < 1 || end > 65535 || start > end)
+                {
+                    return ([], $"'{token}' is outside 1-65535.");
+                }
+
+                if (end - start > 1000)
+                {
+                    return ([], $"'{token}' covers more than 1001 ports.");
+                }
+
+                for (var port = start; port <= end; port++)
+                {
+                    ports.Add(port);
+                }
+            }
+            else if (int.TryParse(token, out var port) && port is >= 1 and <= 65535)
+            {
+                ports.Add(port);
+            }
+            else
+            {
+                return ([], $"'{token}' is not a valid port.");
+            }
+
+            if (ports.Count > 2000)
+            {
+                return ([], "Add at most 2000 ports at once.");
+            }
+        }
+
+        return ports.Count == 0
+            ? ([], "Enter at least one port or range.")
+            : (ports, null);
+    }
+
+    [HttpGet("servers/{uuid}")]
+    public async Task<IActionResult> ServerEdit(string uuid, CancellationToken cancellationToken)
+    {
+        var server = await FindServerAsync(uuid, cancellationToken);
+
+        return server is null
+            ? NotFound()
+            : View(new AdminServerEditViewModel
+            {
+                Server = server,
+                Nodes = await _nodes.ListAsync(cancellationToken),
+                Users = await _users.ListAsync(cancellationToken),
+            });
+    }
+
+    [HttpPost("servers/{uuid}/update")]
+    public async Task<IActionResult> UpdateServer(
+        string uuid,
+        AdminServerEditForm form,
+        CancellationToken cancellationToken)
+    {
+        var server = await FindServerAsync(uuid, cancellationToken);
+
+        if (server is null)
+        {
+            return NotFound();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = FirstError("Check the server details and try again.");
+
+            return RedirectToAction(nameof(ServerEdit), new { uuid });
+        }
+
+        if (form.OwnerId != server.OwnerId &&
+            await _users.FindByIdAsync(form.OwnerId, cancellationToken) is null)
+        {
+            TempData["Error"] = "The selected owner does not exist.";
+
+            return RedirectToAction(nameof(ServerEdit), new { uuid });
+        }
+
+        server.Name = form.Name.Trim();
+        server.Description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim();
+        server.OwnerId = form.OwnerId;
+        server.MemoryLimitMb = form.MemoryMb;
+        server.DiskLimitMb = form.DiskMb;
+        server.CpuLimitPercent = form.CpuLimitPercent;
+        server.Suspended = form.Suspended;
+        server.AccessRestricted = form.AccessRestricted;
+
+        if (form.Suspended)
+        {
+            server.Status = ServerStatus.Suspended;
+        }
+        else if (server.Status == ServerStatus.Suspended)
+        {
+            server.Status = ServerStatus.Offline;
+        }
+
+        server.DaemonConfigurationJson = PatsConfigurationBuilder.BuildSettings(server).GetRawText();
+        await _servers.UpdateAsync(server, cancellationToken);
+
+        TempData["Success"] = $"Updated {server.Name}.";
+
+        return RedirectToAction(nameof(Servers));
+    }
+
+    private async Task<Server?> FindServerAsync(string uuid, CancellationToken cancellationToken) =>
+        Guid.TryParse(uuid, out var value) ? await _servers.FindByUuidAsync(value, cancellationToken) : null;
+
     private async Task<Node?> FindNodeAsync(string uuid, CancellationToken cancellationToken) =>
         Guid.TryParse(uuid, out var value) ? await _nodes.FindByUuidAsync(value, cancellationToken) : null;
 
@@ -744,4 +1046,11 @@ public sealed class AdminController : Controller
 
     private static string RandomToken(int bytes) =>
         Convert.ToHexString(RandomNumberGenerator.GetBytes(bytes)).ToLowerInvariant();
+
+    private sealed record AllocationResult(Allocation Allocation, string? Error)
+    {
+        public static AllocationResult Success(Allocation allocation) => new(allocation, null);
+
+        public static AllocationResult Failed(string error) => new(new Allocation(), error);
+    }
 }

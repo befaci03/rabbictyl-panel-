@@ -5,7 +5,6 @@
     Layout = await ThemeLayouts.ResolveAsync(Context, auth: true);
     ViewData["Title"] = "Sign in";
     var returnUrl = ViewData["ReturnUrl"] as string;
-    var providers = ViewData["OAuthProviders"] as IReadOnlyList<OAuthProvider> ?? Array.Empty<OAuthProvider>();
 }
 
 <section class="auth">
@@ -93,19 +92,8 @@
                     <button type="submit" class="button button--primary button--block">@L["login.submit"]</button>
                 </form>
 
-                @if (providers.Count > 0)
-                {
-                    <div class="form">
-                        <span class="form__label">@L["login.or"]</span>
-                        @foreach (var provider in providers)
-                        {
-                            <a class="button button--ghost button--block"
-                               asp-controller="OAuth" asp-action="Challenge" asp-route-id="@provider.Id">
-                                @L["login.oauth"] @provider.Name
-                            </a>
-                        }
-                    </div>
-                }
+                <!-- Sign-in providers are contributed by add-ons. -->
+                <div class="form" data-addon-slot="auth.providers"></div>
 
                 <p class="auth__note">
                     First run? Sign in with the bootstrap administrator from <code>config/panel.toml</code>.

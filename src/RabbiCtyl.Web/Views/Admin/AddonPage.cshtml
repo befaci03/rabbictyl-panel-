@@ -1,0 +1,31 @@
+@model AdminAddonPageViewModel
+@using RabbiCtyl.Infrastructure.Extensions
+@{
+    ViewData["Title"] = Model.Label;
+}
+
+<section class="page">
+    <header class="page__header">
+        <div>
+            <span class="eyebrow">@L["admin.eyebrow"]</span>
+            <h1 class="page__title">@Model.Label</h1>
+            <p class="page__subtitle">Provided by the @Model.Label add-on. Disable the add-on to remove this tab.</p>
+        </div>
+    </header>
+
+    <partial name="_AdminTabs" />
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert--success" role="status">@success</div>
+    }
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert--danger" role="alert">@error</div>
+    }
+
+    <div class="addon-page">
+        @Html.Raw(Model.Html)
+    </div>
+</section>

@@ -32,6 +32,8 @@ public sealed class PanelController : Controller
             ".jpg" or ".jpeg" => "image/jpeg",
             ".webp" => "image/webp",
             ".gif" => "image/gif",
+            ".avif" => "image/avif",
+            ".jxl" => "image/jxl",
             _ => "application/octet-stream",
         };
 

@@ -11,6 +11,7 @@ namespace RabbiCtyl.Web.Controllers;
 /// copy that shadows the TOML egg; the file itself is never rewritten.
 /// </summary>
 [ApiController]
+[IgnoreAntiforgeryToken]
 [Authorize(Roles = "admin")]
 [Route("api/application/eggs")]
 public sealed class ApplicationEggsApiController : ControllerBase

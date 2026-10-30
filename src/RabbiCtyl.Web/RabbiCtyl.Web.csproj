@@ -9,9 +9,14 @@
   <ItemGroup>
     <ProjectReference Include="..\RabbiCtyl.Core\RabbiCtyl.Core.csproj" />
     <ProjectReference Include="..\RabbiCtyl.Configuration\RabbiCtyl.Configuration.csproj" />
+    <ProjectReference Include="..\RabbiCtyl.Addons.Abstractions\RabbiCtyl.Addons.Abstractions.csproj" />
     <ProjectReference Include="..\RabbiCtyl.Infrastructure\RabbiCtyl.Infrastructure.csproj" />
-    <!-- Builds the bundled demo add-on into addons/demo_user/lib without linking it. -->
+    <!-- Build the bundled add-ons into their addon folders without linking them. -->
     <ProjectReference Include="..\RabbiCtyl.Addon.DemoUser\RabbiCtyl.Addon.DemoUser.csproj"
+                      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\RabbiCtyl.Addon.OAuth2\RabbiCtyl.Addon.OAuth2.csproj"
+                      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\RabbiCtyl.Addon.EggBanners\RabbiCtyl.Addon.EggBanners.csproj"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>
 
@@ -24,6 +29,10 @@
              CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\addons\**\*"
              Link="addons\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\nests\**\*"
+             Link="nests\%(RecursiveDir)%(Filename)%(Extension)"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

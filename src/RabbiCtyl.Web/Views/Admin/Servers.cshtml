@@ -89,6 +89,17 @@
                             <input class="form__input" id="server-port" name="AllocationPort" type="number" value="25565" min="1" max="65535" required />
                         </div>
                         <div class="form__group">
+                            <label class="form__label" for="server-allocation">Free allocation</label>
+                            <select class="form__input" id="server-allocation" name="AllocationId">
+                                <option value="">Use the IP and port above</option>
+                                @foreach (var allocation in Model.FreeAllocations)
+                                {
+                                    <option value="@allocation.Id">@allocation.Ip:@allocation.Port</option>
+                                }
+                            </select>
+                            <span class="form__hint">Created in General → Automatic allocation creation.</span>
+                        </div>
+                        <div class="form__group">
                             <label class="form__label" for="server-memory">Memory (MB)</label>
                             <input class="form__input" id="server-memory" name="MemoryMb" type="number" value="1024" min="128" required />
                         </div>

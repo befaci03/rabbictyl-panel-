@@ -1,0 +1,87 @@
+@model AdminServerEditViewModel
+@{
+    ViewData["Title"] = "Edit server";
+    var server = Model.Server;
+}
+
+<section class="page">
+    <header class="page__header">
+        <div>
+            <span class="eyebrow">@L["admin.eyebrow"]</span>
+            <h1 class="page__title">Edit @server.Name</h1>
+            <p class="page__subtitle">Build limits, owner, suspension and temporary access restrictions.</p>
+        </div>
+        <a class="button button--ghost" asp-controller="Admin" asp-action="Servers">Back to servers</a>
+    </header>
+
+    <partial name="_AdminTabs" />
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert--success" role="status">@success</div>
+    }
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert--danger" role="alert">@error</div>
+    }
+
+    <form method="post"
+          asp-controller="Admin"
+          asp-action="UpdateServer"
+          asp-route-uuid="@server.Uuid"
+          class="form card">
+        <div class="admin-create__grid">
+            <div class="form__group">
+                <label class="form__label" for="edit-server-name">Name</label>
+                <input class="form__input" id="edit-server-name" name="Name" value="@server.Name" required maxlength="191" />
+            </div>
+            <div class="form__group">
+                <label class="form__label" for="edit-server-owner">Owner</label>
+                <select class="form__input" id="edit-server-owner" name="OwnerId" required>
+                    @foreach (var user in Model.Users)
+                    {
+                        <option value="@user.Id" selected="@(user.Id == server.OwnerId)">@user.DisplayName (@user.Username)</option>
+                    }
+                </select>
+            </div>
+            <div class="form__group">
+                <label class="form__label" for="edit-server-memory">Memory (MB)</label>
+                <input class="form__input" id="edit-server-memory" name="MemoryMb" type="number" value="@server.MemoryLimitMb" min="128" required />
+            </div>
+            <div class="form__group">
+                <label class="form__label" for="edit-server-disk">Disk (MB)</label>
+                <input class="form__input" id="edit-server-disk" name="DiskMb" type="number" value="@server.DiskLimitMb" min="0" required />
+            </div>
+            <div class="form__group">
+                <label class="form__label" for="edit-server-cpu">CPU limit (%)</label>
+                <input class="form__input" id="edit-server-cpu" name="CpuLimitPercent" type="number" value="@server.CpuLimitPercent" min="0" max="10000" />
+            </div>
+            <div class="form__group">
+                <label class="form__label" for="edit-server-description">Description</label>
+                <input class="form__input" id="edit-server-description" name="Description" value="@server.Description" maxlength="1024" />
+            </div>
+        </div>
+
+        <dl class="detail-list">
+            <div><dt>Node</dt><dd>@(Model.Nodes.FirstOrDefault(node => node.Id == server.NodeId)?.Name ?? "Unknown node")</dd></div>
+            <div><dt>Allocation</dt><dd><code>@server.AllocationIp:@server.AllocationPort</code></dd></div>
+            <div><dt>UUID</dt><dd><code>@server.Uuid</code></dd></div>
+        </dl>
+
+        <div class="admin-create__checks">
+            <label class="form__check">
+                <input type="checkbox" name="Suspended" value="true" checked="@server.Suspended" />
+                Suspend this server (blocks power actions, SFTP and the API)
+            </label>
+            <label class="form__check">
+                <input type="checkbox" name="AccessRestricted" value="true" checked="@server.AccessRestricted" />
+                Temporarily restrict access (keeps running; owner only sees console, files and settings)
+            </label>
+        </div>
+
+        <div class="admin-create__actions">
+            <button type="submit" class="button button--primary">Save changes</button>
+        </div>
+    </form>
+</section>

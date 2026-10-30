@@ -48,7 +48,7 @@
         </div>
 
         <div class="server-hero__side">
-            @if (!server.Suspended)
+            @if (!server.Suspended && !Model.AccessRestricted)
             {
                 <div class="server-power" data-server-power data-server-uuid="@server.Uuid">
                     <button type="button" class="button button--primary button--sm" data-power-action="start">@L["server.power.start"]</button>
@@ -60,6 +60,9 @@
         </div>
     </header>
 
+    <!-- Addons may fill this slot; the Egg Banners add-on puts the egg banner here. -->
+    <div class="server-banner" data-addon-slot="server.banner" data-server-uuid="@server.Uuid"></div>
+
     @if (!string.IsNullOrWhiteSpace(Model.DaemonError))
     {
         <div class="alert alert--danger" role="alert">@Model.DaemonError</div>
@@ -68,10 +71,13 @@
     <nav class="server-tabs" aria-label="@L["server.sections"]">
         <a class="@TabClass("console")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="console">@L["nav.console"]</a>
         <a class="@TabClass("files")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="files">@L["nav.files"]</a>
-        <a class="@TabClass("backups")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="backups">@L["nav.backups"]</a>
-        <a class="@TabClass("schedules")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="schedules">@L["nav.schedules"]</a>
-        <a class="@TabClass("users")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="users">@L["nav.users"]</a>
-        <a class="@TabClass("startup")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="startup">@L["nav.startup"]</a>
+        @if (!Model.AccessRestricted)
+        {
+            <a class="@TabClass("backups")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="backups">@L["nav.backups"]</a>
+            <a class="@TabClass("schedules")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="schedules">@L["nav.schedules"]</a>
+            <a class="@TabClass("users")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="users">@L["nav.users"]</a>
+            <a class="@TabClass("startup")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="startup">@L["nav.startup"]</a>
+        }
         <a class="@TabClass("settings")" asp-controller="Server" asp-action="Index" asp-route-uuid="@server.Uuid" asp-route-section="settings">@L["nav.settings"]</a>
     </nav>
 

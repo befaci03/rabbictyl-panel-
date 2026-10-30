@@ -1,7 +1,9 @@
 @{
+    // The bundled logo is the single source of truth for the panel mark. A theme
+    // can still style it, but it never swaps in its own artwork.
     var brandLogo = Branding.LogoPath is not null
         ? $"{Url.Content("~/panel/logo")}?v={Branding.LogoVersion}"
-        : ViewData["BrandLogoUrl"] as string ?? Url.Content("~/logo.svg");
+        : Url.Content("~/logo.svg");
 }
 
 <span class="brand__mark" aria-hidden="true">
