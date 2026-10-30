@@ -107,6 +107,11 @@ public static class DependencyInjection
             provider.GetRequiredService<IAddonState>(),
             provider.GetRequiredService<ILogger<FileSystemAddonCatalog>>()));
 
+        services.AddSingleton<IPanelBrandingStore>(provider => new FileSystemPanelBrandingStore(
+            options.Storage.Directory,
+            options.App.Name,
+            provider.GetRequiredService<ILogger<FileSystemPanelBrandingStore>>()));
+
         services.AddSingleton<IThemeState>(provider => new FileSystemThemeState(
             Path.Combine(options.Storage.Directory, "theme.json"),
             options.Themes.Active,

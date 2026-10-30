@@ -1,5 +1,4 @@
 {
-  "brand.subtitle": "Panneau de jeu",
   "language.label": "Langue",
   "nav.workspace": "Espace de travail",
   "nav.dashboard": "Tableau de bord",
@@ -60,7 +59,7 @@
   "register.asideTitle": "Votre espace, en quelques secondes.",
   "register.asideText": "Créez un compte et vos serveurs apparaîtront dès qu'ils vous seront attribués.",
   "register.firstName": "Prénom",
-  "register.lastName": "Nom",
+  "register.lastName": "Nom (optionnel)",
   "register.username": "Nom d'utilisateur",
   "register.email": "Adresse e-mail",
   "register.password": "Mot de passe",
@@ -222,5 +221,7 @@
   "admin.eyebrow": "Administration",
   "admin.games.edit": "Modifier",
   "admin.games.save": "Enregistrer",
-  "admin.games.nestEditWarning": "Ce modèle vient d'un fichier TOML de nid. L'enregistrement crée une copie dans le panneau : reconvertir les modifications en TOML est lossy, le fichier reste donc intact."
+  "admin.games.nestEditWarning": "Ce modèle vient d'un fichier TOML de nid. L'enregistrement crée une copie dans le panneau : reconvertir les modifications en TOML est lossy, le fichier reste donc intact.",
+  "admin.general": "Général",
+  "admin.games.edited": "Modifié le"
 }

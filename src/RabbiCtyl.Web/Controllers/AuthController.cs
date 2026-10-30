@@ -302,7 +302,7 @@ public sealed class AuthController : Controller
             Username = username,
             Email = email,
             NameFirst = model.FirstName.Trim(),
-            NameLast = model.LastName.Trim(),
+            NameLast = string.IsNullOrWhiteSpace(model.LastName) ? string.Empty : model.LastName.Trim(),
             PasswordHash = _passwordHasher.Hash(model.Password),
             IsRootAdmin = false,
         };
@@ -381,7 +381,7 @@ public sealed class AuthController : Controller
             Username = username,
             Email = email,
             NameFirst = model.FirstName.Trim(),
-            NameLast = model.LastName.Trim(),
+            NameLast = string.IsNullOrWhiteSpace(model.LastName) ? string.Empty : model.LastName.Trim(),
             PasswordHash = _passwordHasher.Hash(model.Password),
             IsRootAdmin = true,
         };

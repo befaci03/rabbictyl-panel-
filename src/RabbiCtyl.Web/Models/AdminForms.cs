@@ -154,11 +154,52 @@ public sealed class CreateUserForm
     [Required, StringLength(64, MinimumLength = 1)]
     public string FirstName { get; set; } = string.Empty;
 
-    [Required, StringLength(64, MinimumLength = 1)]
-    public string LastName { get; set; } = string.Empty;
+    [StringLength(64)]
+    public string? LastName { get; set; }
 
     [Required, StringLength(128, MinimumLength = 8)]
     public string Password { get; set; } = string.Empty;
 
     public bool IsRootAdmin { get; set; }
+}
+
+public sealed class AdminUserEditForm
+{
+    [Required, StringLength(32, MinimumLength = 3), RegularExpression("^[a-zA-Z0-9_.-]+$")]
+    public string Username { get; set; } = string.Empty;
+
+    [Required, EmailAddress, StringLength(255)]
+    public string Email { get; set; } = string.Empty;
+
+    [Required, StringLength(64, MinimumLength = 1)]
+    public string FirstName { get; set; } = string.Empty;
+
+    [StringLength(64)]
+    public string? LastName { get; set; }
+
+    [StringLength(8)]
+    public string Language { get; set; } = "en";
+
+    public bool IsRootAdmin { get; set; }
+
+    /// <summary>Optional; leave empty to keep the current password.</summary>
+    [StringLength(128, MinimumLength = 8)]
+    public string? NewPassword { get; set; }
+}
+
+public sealed class AdminUserEditViewModel
+{
+    public User User { get; init; } = new();
+}
+
+public sealed class GeneralSettingsForm
+{
+    [Required, StringLength(64, MinimumLength = 1)]
+    public string Name { get; set; } = string.Empty;
+
+    public bool HideSidebarLogo { get; set; }
+
+    public bool RemoveLogo { get; set; }
+
+    public IFormFile? Logo { get; set; }
 }

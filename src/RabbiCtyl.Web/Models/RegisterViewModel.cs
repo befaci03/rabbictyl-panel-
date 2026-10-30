@@ -18,9 +18,8 @@ public sealed class RegisterViewModel
     [StringLength(64)]
     public string FirstName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Enter your last name.")]
     [StringLength(64)]
-    public string LastName { get; set; } = string.Empty;
+    public string? LastName { get; set; }
 
     [Required(ErrorMessage = "Choose a password.")]
     [StringLength(128, MinimumLength = 8)]

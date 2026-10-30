@@ -140,6 +140,34 @@ code {
   margin: 0;
 }
 
+.app-shell.is-compact .sidebar__head {
+  display: none;
+}
+
+.app-shell.is-compact .sidebar-expand {
+  position: absolute;
+  top: 12px;
+  right: -13px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.app-shell.is-compact .sidebar-expand:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
 .sidebar {
   position: sticky;
   top: 0;
@@ -150,6 +178,29 @@ code {
   padding: 22px 16px 18px;
   background: var(--surface);
   border-right: 1px solid var(--border);
+}
+
+.sidebar__head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sidebar__head .brand {
+  min-width: 0;
+  padding: 0;
+}
+
+.sidebar__collapse {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-left: -6px;
+}
+
+.sidebar-expand {
+  display: none;
 }
 
 .brand {
@@ -178,6 +229,12 @@ code {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.branding-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .brand__text {
@@ -402,6 +459,12 @@ code {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* The sidebar header carries its own collapse control on desktop; the topbar
+   toggle is only used to open the drawer on small screens. */
+.sidebar-toggle {
+  display: none;
 }
 
 .status {
@@ -1972,6 +2035,82 @@ code {
   text-transform: uppercase;
 }
 
+.ptero-sidebar__head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ptero-sidebar__head .ptero-brand {
+  min-width: 0;
+  padding: 0;
+}
+
+.ptero-sidebar__collapse {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  margin-left: -4px;
+}
+
+.ptero-sidebar-expand {
+  display: none;
+}
+
+.ptero-shell.is-compact {
+  grid-template-columns: 76px minmax(0, 1fr);
+}
+
+.ptero-shell.is-compact .ptero-sidebar {
+  padding: 18px 10px 14px;
+}
+
+.ptero-shell.is-compact .ptero-sidebar__head,
+.ptero-shell.is-compact .ptero-sidebar__heading,
+.ptero-shell.is-compact .ptero-brand__text,
+.ptero-shell.is-compact .ptero-server__name,
+.ptero-shell.is-compact .ptero-server__status,
+.ptero-shell.is-compact .ptero-sidebar .nav__label,
+.ptero-shell.is-compact .ptero-sidebar .nav__link > span,
+.ptero-shell.is-compact .ptero-user__meta {
+  display: none;
+}
+
+.ptero-shell.is-compact .ptero-sidebar .nav__link {
+  justify-content: center;
+  padding: 8px;
+}
+
+.ptero-shell.is-compact .ptero-server,
+.ptero-shell.is-compact .ptero-user {
+  justify-content: center;
+}
+
+.ptero-shell.is-compact .ptero-sidebar-expand {
+  position: absolute;
+  top: 12px;
+  right: -13px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.ptero-shell.is-compact .ptero-sidebar-expand:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
 .ptero-sidebar__scroll {
   min-height: 0;
   overflow-y: auto;
@@ -2377,6 +2516,17 @@ code {
   .app-shell,
   .ptero-shell {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ptero-shell.is-compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar__collapse,
+  .sidebar-expand,
+  .ptero-sidebar__collapse,
+  .ptero-sidebar-expand {
+    display: none !important;
   }
 
   .sidebar {

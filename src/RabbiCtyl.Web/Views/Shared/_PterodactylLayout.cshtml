@@ -25,6 +25,12 @@
         StringComparison.OrdinalIgnoreCase)
         ? L["env.development"]
         : PanelOptions.App.Environment;
+    var panelName = Branding.Current.Name;
+    var showSidebarLogo = !Branding.Current.HideSidebarLogo;
+    var faviconUrl = Branding.LogoPath is not null
+        ? $"{Url.Content("~/panel/logo")}?v={Branding.LogoVersion}"
+        : logoUrl ?? Url.Content("~/logo.svg");
+    ViewData["BrandLogoUrl"] = logoUrl;
 
     IReadOnlyList<Server> sidebarServers = [];
 
@@ -58,8 +64,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="@csrfToken" />
     <meta name="theme-color" content="#111827" />
-    <title>@title · RabbiCtyl</title>
-    <link rel="icon" href="@(logoUrl ?? Url.Content("~/logo.svg"))" />
+    <title>@title · @panelName</title>
+    <link rel="icon" href="@faviconUrl" />
     <link rel="stylesheet" href="~/assets/css/app.css" asp-append-version="true" />
     @if (activeTheme is not null)
     {
@@ -74,13 +80,41 @@
 {
     <div class="ptero-shell" id="app-shell">
         <aside class="ptero-sidebar" id="sidebar">
-            <a class="ptero-brand" asp-controller="Home" asp-action="Index">
-                <partial name="_BrandMark" />
-                <span class="ptero-brand__text">
-                    <span class="ptero-brand__name">RabbiCtyl</span>
-                    <span class="ptero-brand__sub">@L["brand.subtitle"]</span>
-                </span>
-            </a>
+            <div class="ptero-sidebar__head">
+                <button type="button"
+                        class="icon-button ptero-sidebar__collapse"
+                        id="sidebar-collapse"
+                        aria-controls="sidebar"
+                        aria-expanded="true"
+                        title="@L["nav.collapse"]"
+                        aria-label="@L["nav.collapse"]">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                        <path d="M13 6l-6 6 6 6M19 6l-6 6 6 6" />
+                    </svg>
+                </button>
+
+                <a class="ptero-brand" asp-controller="Home" asp-action="Index">
+                    @if (showSidebarLogo)
+                    {
+                        <partial name="_BrandMark" />
+                    }
+                    <span class="ptero-brand__text">
+                        <span class="ptero-brand__name">@panelName</span>
+                    </span>
+                </a>
+            </div>
+
+            <button type="button"
+                    class="ptero-sidebar-expand"
+                    id="sidebar-expand"
+                    aria-controls="sidebar"
+                    aria-expanded="false"
+                    title="@L["nav.expand"]"
+                    aria-label="@L["nav.expand"]">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                    <path d="M11 6l6 6-6 6M5 6l6 6-6 6" />
+                </svg>
+            </button>
 
             <div class="ptero-sidebar__scroll">
                 <div class="ptero-servers">
@@ -144,7 +178,7 @@
                 </button>
 
                 <div class="ptero-topbar__crumb">
-                    <a class="ptero-topbar__app" asp-controller="Home" asp-action="Index">@PanelOptions.App.Name</a>
+                    <a class="ptero-topbar__app" asp-controller="Home" asp-action="Index">@panelName</a>
                     <span class="ptero-topbar__slash">/</span>
                     @if (currentServer is not null)
                     {

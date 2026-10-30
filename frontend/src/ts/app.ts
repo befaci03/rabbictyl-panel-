@@ -7,8 +7,9 @@ document.documentElement.classList.toggle("motion-ok", !reduceMotion);
 const shell = document.querySelector<HTMLElement>("#app-shell");
 const sidebarToggle = document.querySelector<HTMLButtonElement>("#sidebar-toggle");
 const mobileQuery = window.matchMedia("(max-width: 900px)");
+const collapseButton = document.querySelector<HTMLButtonElement>("#sidebar-collapse");
+const expandButton = document.querySelector<HTMLButtonElement>("#sidebar-expand");
 const storageKey = "rabbictyl.sidebar.compact";
-const supportsCompact = !document.body.classList.contains("ptero-body");
 const collapseLabel = sidebarToggle?.dataset.labelCollapse ?? "Collapse sidebar";
 const expandLabel = sidebarToggle?.dataset.labelExpand ?? "Expand sidebar";
 const openLabel = sidebarToggle?.dataset.labelOpen ?? "Open navigation";
@@ -17,6 +18,10 @@ const closeLabel = sidebarToggle?.dataset.labelClose ?? "Close navigation";
 const isMobile = (): boolean => mobileQuery.matches;
 
 function syncSidebarButton(): void {
+  const compact = shell?.classList.contains("is-compact") ?? false;
+  collapseButton?.setAttribute("aria-expanded", String(!compact));
+  expandButton?.setAttribute("aria-expanded", String(!compact));
+
   if (!sidebarToggle) {
     return;
   }
@@ -29,14 +34,13 @@ function syncSidebarButton(): void {
     return;
   }
 
-  const compact = shell?.classList.contains("is-compact") ?? false;
   sidebarToggle.title = compact ? expandLabel : collapseLabel;
   sidebarToggle.setAttribute("aria-label", sidebarToggle.title);
   sidebarToggle.setAttribute("aria-expanded", String(!compact));
 }
 
 function applyCompact(compact: boolean): void {
-  if (!shell || !supportsCompact) {
+  if (!shell) {
     return;
   }
 
@@ -49,7 +53,15 @@ function closeSidebar(): void {
   syncSidebarButton();
 }
 
-if (shell && sidebarToggle) {
+function persistCompact(value: boolean): void {
+  try {
+    window.localStorage.setItem(storageKey, String(value));
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+if (shell) {
   let compact = false;
 
   try {
@@ -60,7 +72,7 @@ if (shell && sidebarToggle) {
 
   applyCompact(compact);
 
-  sidebarToggle.addEventListener("click", () => {
+  sidebarToggle?.addEventListener("click", () => {
     if (isMobile()) {
       shell.classList.toggle("is-sidebar-open");
       syncSidebarButton();
@@ -69,12 +81,17 @@ if (shell && sidebarToggle) {
 
     const next = !shell.classList.contains("is-compact");
     applyCompact(next);
+    persistCompact(next);
+  });
 
-    try {
-      window.localStorage.setItem(storageKey, String(next));
-    } catch {
-      // Ignore storage failures.
-    }
+  collapseButton?.addEventListener("click", () => {
+    applyCompact(true);
+    persistCompact(true);
+  });
+
+  expandButton?.addEventListener("click", () => {
+    applyCompact(false);
+    persistCompact(false);
   });
 
   document.querySelectorAll<HTMLElement>("[data-sidebar-close]").forEach((backdrop) => {
@@ -89,7 +106,12 @@ if (shell && sidebarToggle) {
 
   mobileQuery.addEventListener("change", () => {
     closeSidebar();
-    applyCompact(compact);
+
+    try {
+      applyCompact(window.localStorage.getItem(storageKey) === "true");
+    } catch {
+      applyCompact(false);
+    }
   });
 }
 

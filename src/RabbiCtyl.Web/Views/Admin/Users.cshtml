@@ -40,8 +40,8 @@
                         <input class="form__input" id="user-first" name="FirstName" required maxlength="64" />
                     </div>
                     <div class="form__group">
-                        <label class="form__label" for="user-last">Last name</label>
-                        <input class="form__input" id="user-last" name="LastName" required maxlength="64" />
+                        <label class="form__label" for="user-last">Last name (optional)</label>
+                        <input class="form__input" id="user-last" name="LastName" maxlength="64" />
                     </div>
                     <div class="form__group">
                         <label class="form__label" for="user-username">Username</label>
@@ -90,6 +90,7 @@
                             <th>Email</th>
                             <th>Role</th>
                             <th>Created</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -114,6 +115,12 @@
                                 }
                             </td>
                             <td>@user.CreatedAt.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                <div class="table__actions">
+                                    <a class="button button--ghost button--sm"
+                                       asp-controller="Admin" asp-action="UserEdit" asp-route-id="@user.Id">Edit</a>
+                                </div>
+                            </td>
                         </tr>
                     }
                     </tbody>

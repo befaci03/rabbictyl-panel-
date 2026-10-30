@@ -7,7 +7,12 @@ namespace RabbiCtyl.Core.Extensions;
 /// from TOML files on disk and are read-only; panel templates live in the
 /// database and can be edited from the admin area.
 /// </summary>
-public sealed record GameTemplate(Egg Egg, string? NestId, string? NestName, bool FromNest);
+public sealed record GameTemplate(
+    Egg Egg,
+    string? NestId,
+    string? NestName,
+    bool FromNest,
+    DateTimeOffset? EditedAt = null);
 
 /// <summary>A nest file as loaded from <c>nests/*.toml</c>.</summary>
 public sealed record NestDescriptor(

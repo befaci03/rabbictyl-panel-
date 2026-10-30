@@ -1,0 +1,79 @@
+@model PanelBranding
+@{
+    ViewData["Title"] = L["admin.general"].ToString();
+}
+
+<section class="page">
+    <header class="page__header">
+        <div>
+            <span class="eyebrow">@L["admin.eyebrow"]</span>
+            <h1 class="page__title">@L["admin.general"]</h1>
+            <p class="page__subtitle">Panel name and logo used across the interface.</p>
+        </div>
+    </header>
+
+    <partial name="_AdminTabs" />
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert--success" role="status">@success</div>
+    }
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert--danger" role="alert">@error</div>
+    }
+
+    <form method="post"
+          asp-controller="Admin"
+          asp-action="General"
+          enctype="multipart/form-data"
+          class="form card">
+        <div class="admin-create__grid">
+            <div class="form__group">
+                <label class="form__label" for="general-name">Panel name</label>
+                <input class="form__input" id="general-name" name="Name" value="@Model.Name" required maxlength="64" />
+                <span class="form__hint">Shown in the sidebar, page titles and sign-in screens.</span>
+            </div>
+            <div class="form__group">
+                <label class="form__label" for="general-logo">Logo</label>
+                <input class="form__input"
+                       id="general-logo"
+                       name="Logo"
+                       type="file"
+                       accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" />
+                <span class="form__hint">PNG, JPEG, WebP, GIF or SVG up to 2 MB.</span>
+            </div>
+        </div>
+
+        <div class="form__group">
+            <span class="form__label">Current logo</span>
+            <div class="branding-preview">
+                <partial name="_BrandMark" />
+                @if (Branding.LogoPath is null)
+                {
+                    <span class="form__hint">The bundled logo is used until you upload one.</span>
+                }
+            </div>
+        </div>
+
+        <div class="admin-create__checks">
+            <label class="form__check">
+                <input type="checkbox" name="HideSidebarLogo" value="true" checked="@Model.HideSidebarLogo" />
+                Hide the logo in the sidebar
+            </label>
+
+            @if (Branding.LogoPath is not null)
+            {
+                <label class="form__check">
+                    <input type="checkbox" name="RemoveLogo" value="true" />
+                    Remove the custom logo
+                </label>
+            }
+        </div>
+
+        <div class="admin-create__actions">
+            <button type="submit" class="button button--primary">Save changes</button>
+        </div>
+    </form>
+</section>

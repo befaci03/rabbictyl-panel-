@@ -1,5 +1,4 @@
 {
-  "brand.subtitle": "Game panel",
   "language.label": "Language",
   "nav.workspace": "Workspace",
   "nav.dashboard": "Dashboard",
@@ -60,7 +59,7 @@
   "register.asideTitle": "Your own space, in seconds.",
   "register.asideText": "Create an account and your servers will show up here as soon as they are assigned.",
   "register.firstName": "First name",
-  "register.lastName": "Last name",
+  "register.lastName": "Last name (optional)",
   "register.username": "Username",
   "register.email": "Email address",
   "register.password": "Password",
@@ -223,5 +222,7 @@
   "admin.eyebrow": "Administration",
   "admin.games.edit": "Edit",
   "admin.games.save": "Save changes",
-  "admin.games.nestEditWarning": "This template comes from a nest TOML file. Saving stores a panel copy: converting panel changes back to TOML is lossy, so the file is left untouched."
+  "admin.games.nestEditWarning": "This template comes from a nest TOML file. Saving stores a panel copy: converting panel changes back to TOML is lossy, so the file is left untouched.",
+  "admin.general": "General",
+  "admin.games.edited": "Edited"
 }

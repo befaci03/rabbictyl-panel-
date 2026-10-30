@@ -2,7 +2,8 @@
 @inject IThemeCatalog ThemeCatalog
 @{
     var activeTheme = await ThemeCatalog.FindAsync(ThemeState.ActiveThemeId);
-    var title = ViewData["Title"] as string ?? "RabbiCtyl";
+    var panelName = Branding.Current.Name;
+    var title = ViewData["Title"] as string ?? panelName;
     var logoUrl = activeTheme is not null && activeTheme.AssetUrls.TryGetValue("logo", out var themeLogo)
         ? themeLogo
         : null;
@@ -13,7 +14,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0a0c10" />
-    <title>@title · RabbiCtyl</title>
+    <title>@title · @panelName</title>
     <link rel="icon" href="@(logoUrl ?? Url.Content("~/logo.svg"))" />
     <link rel="stylesheet" href="~/assets/css/app.css" asp-append-version="true" />
     @if (activeTheme is not null)

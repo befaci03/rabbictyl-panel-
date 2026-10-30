@@ -9,10 +9,9 @@ public sealed class SetupViewModel
     [Display(Name = "First name")]
     public string FirstName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Enter your last name.")]
     [StringLength(100, ErrorMessage = "Last name must be 100 characters or fewer.")]
-    [Display(Name = "Last name")]
-    public string LastName { get; set; } = string.Empty;
+    [Display(Name = "Last name (optional)")]
+    public string? LastName { get; set; }
 
     [Required(ErrorMessage = "Choose a username.")]
     [StringLength(32, MinimumLength = 3, ErrorMessage = "Username must be 3–32 characters.")]

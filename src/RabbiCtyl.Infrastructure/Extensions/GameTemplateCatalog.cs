@@ -36,9 +36,15 @@ public sealed class GameTemplateCatalog : IGameTemplateCatalog
                     continue;
                 }
 
-                var effective = stored.GetValueOrDefault(egg.Uuid) ?? egg;
+                var storedCopy = stored.GetValueOrDefault(egg.Uuid);
+                var effective = storedCopy ?? egg;
 
-                templates.Add(new GameTemplate(effective, nest.Id, nest.Name, FromNest: true));
+                templates.Add(new GameTemplate(
+                    effective,
+                    nest.Id,
+                    nest.Name,
+                    FromNest: true,
+                    EditedAt: storedCopy?.UpdatedAt));
             }
         }
 
@@ -46,7 +52,7 @@ public sealed class GameTemplateCatalog : IGameTemplateCatalog
         {
             if (seen.Add(egg.Uuid))
             {
-                templates.Add(new GameTemplate(egg, null, null, FromNest: false));
+                templates.Add(new GameTemplate(egg, null, null, FromNest: false, EditedAt: egg.UpdatedAt));
             }
         }
 
@@ -67,10 +73,17 @@ public sealed class GameTemplateCatalog : IGameTemplateCatalog
 
             if (nestEgg is not null)
             {
-                return new GameTemplate(stored ?? nestEgg, nest.Id, nest.Name, FromNest: true);
+                return new GameTemplate(
+                    stored ?? nestEgg,
+                    nest.Id,
+                    nest.Name,
+                    FromNest: true,
+                    EditedAt: stored?.UpdatedAt);
             }
         }
 
-        return stored is null ? null : new GameTemplate(stored, null, null, FromNest: false);
+        return stored is null
+            ? null
+            : new GameTemplate(stored, null, null, FromNest: false, EditedAt: stored.UpdatedAt);
     }
 }

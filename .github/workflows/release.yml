@@ -1,0 +1,116 @@
+name: Release
+
+# Manual only: run it from the Actions tab (or `gh workflow run release.yml -f version=1.2.0`)
+# to tag the current commit and publish a GitHub release with the built panel.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, without the leading v (for example 1.2.0)"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark this release as a pre-release"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate the version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'$VERSION' is not a valid semantic version (expected MAJOR.MINOR.PATCH)."
+            exit 1
+          fi
+
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "::error::Tag v$VERSION already exists; pick a new version."
+            exit 1
+          fi
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Build the frontend
+        working-directory: frontend
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+
+      - name: Build and test
+        run: |
+          dotnet build RabbiCtyl.sln -c Release
+          dotnet test tests/RabbiCtyl.Tests/RabbiCtyl.Tests.csproj -c Release --no-build
+
+      - name: Publish the panel
+        run: |
+          dotnet publish src/RabbiCtyl.Web/RabbiCtyl.Web.csproj \
+            -c Release \
+            -o artifacts/rabbictyl \
+            -p:Version=${{ inputs.version }}
+
+      - name: Include bundled add-on assemblies
+        run: |
+          mkdir -p artifacts/rabbictyl/addons/demo_user
+          if [ -d addons/demo_user/lib ]; then
+            cp -R addons/demo_user/lib artifacts/rabbictyl/addons/demo_user/
+          fi
+
+      - name: Package the release
+        run: |
+          cd artifacts
+          zip -r "rabbictyl-${{ inputs.version }}.zip" rabbictyl
+
+      - name: Tag the commit
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "RabbiCtyl $VERSION"
+          git push origin "v$VERSION"
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          flags=()
+
+          if [ "$PRERELEASE" = "true" ]; then
+            flags+=(--prerelease)
+          fi
+
+          gh release create "v$VERSION" "artifacts/rabbictyl-$VERSION.zip" \
+            --title "RabbiCtyl $VERSION" \
+            --generate-notes \
+            "${flags[@]}"

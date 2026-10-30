@@ -2,7 +2,8 @@
 @inject IThemeCatalog ThemeCatalog
 @{
     var activeTheme = await ThemeCatalog.FindAsync(ThemeState.ActiveThemeId);
-    var title = ViewData["Title"] as string ?? "RabbiCtyl";
+    var panelName = Branding.Current.Name;
+    var title = ViewData["Title"] as string ?? panelName;
     var logoUrl = activeTheme is not null && activeTheme.AssetUrls.TryGetValue("logo", out var themeLogo)
         ? themeLogo
         : null;
@@ -13,7 +14,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#1f2937" />
-    <title>@title · RabbiCtyl</title>
+    <title>@title · @panelName</title>
     <link rel="icon" href="@(logoUrl ?? Url.Content("~/logo.svg"))" />
     <link rel="stylesheet" href="~/assets/css/app.css" asp-append-version="true" />
     @if (activeTheme is not null)
@@ -28,10 +29,10 @@
     <main class="ptero-auth">
         <div class="ptero-auth__brand">
             <partial name="_BrandMark" />
-            <span>RabbiCtyl</span>
+            <span>@panelName</span>
         </div>
         @RenderBody()
-        <p class="ptero-auth__foot">RabbiCtyl panel</p>
+        <p class="ptero-auth__foot">@panelName panel</p>
     </main>
     <script src="~/assets/js/app.js" asp-append-version="true"></script>
     @if (activeTheme is not null)

@@ -7,6 +7,7 @@ using RabbiCtyl.Core.Entities;
 using RabbiCtyl.Core.Extensions;
 using RabbiCtyl.Infrastructure.Pats;
 using RabbiCtyl.Web.Models;
+using RabbiCtyl.Web.Security;
 
 namespace RabbiCtyl.Web.Controllers;
 
@@ -22,6 +23,7 @@ public sealed class AdminController : Controller
     private readonly IOAuthProviderStore _oauth;
     private readonly IAddonCatalog _addons;
     private readonly IAddonState _addonState;
+    private readonly IPanelBrandingStore _branding;
     private readonly IPatsClientFactory _pats;
     private readonly IPasswordHasher _passwordHasher;
     private readonly PanelOptions _options;
@@ -36,6 +38,7 @@ public sealed class AdminController : Controller
         IOAuthProviderStore oauth,
         IAddonCatalog addons,
         IAddonState addonState,
+        IPanelBrandingStore branding,
         IPatsClientFactory pats,
         IPasswordHasher passwordHasher,
         PanelOptions options,
@@ -49,6 +52,7 @@ public sealed class AdminController : Controller
         _oauth = oauth;
         _addons = addons;
         _addonState = addonState;
+        _branding = branding;
         _pats = pats;
         _passwordHasher = passwordHasher;
         _options = options;
@@ -169,7 +173,7 @@ public sealed class AdminController : Controller
             Username = username,
             Email = email,
             NameFirst = form.FirstName.Trim(),
-            NameLast = form.LastName.Trim(),
+            NameLast = string.IsNullOrWhiteSpace(form.LastName) ? string.Empty : form.LastName.Trim(),
             PasswordHash = _passwordHasher.Hash(form.Password),
             IsRootAdmin = form.IsRootAdmin,
         };
@@ -180,6 +184,134 @@ public sealed class AdminController : Controller
 
         return RedirectToAction(nameof(Users));
     }
+
+    [HttpGet("users/{id:guid}")]
+    public async Task<IActionResult> UserEdit(Guid id, CancellationToken cancellationToken)
+    {
+        var user = await _users.FindByIdAsync(id, cancellationToken);
+
+        return user is null
+            ? NotFound()
+            : View(new AdminUserEditViewModel { User = user });
+    }
+
+    [HttpPost("users/{id:guid}/update")]
+    public async Task<IActionResult> UpdateUser(
+        Guid id,
+        AdminUserEditForm form,
+        CancellationToken cancellationToken)
+    {
+        var user = await _users.FindByIdAsync(id, cancellationToken);
+
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = FirstError("Check the account details and try again.");
+
+            return RedirectToAction(nameof(UserEdit), new { id });
+        }
+
+        var username = form.Username.Trim();
+        var email = form.Email.Trim();
+
+        var usernameOwner = await _users.FindByLoginAsync(username, cancellationToken);
+        var emailOwner = await _users.FindByLoginAsync(email, cancellationToken);
+
+        if (usernameOwner is not null && usernameOwner.Id != user.Id ||
+            emailOwner is not null && emailOwner.Id != user.Id)
+        {
+            TempData["Error"] = "That username or email is already in use.";
+
+            return RedirectToAction(nameof(UserEdit), new { id });
+        }
+
+        if (user.IsRootAdmin && !form.IsRootAdmin && User.GetUserId() == user.Id)
+        {
+            TempData["Error"] = "You cannot remove your own administrator access.";
+
+            return RedirectToAction(nameof(UserEdit), new { id });
+        }
+
+        user.Username = username;
+        user.Email = email;
+        user.NameFirst = form.FirstName.Trim();
+        user.NameLast = string.IsNullOrWhiteSpace(form.LastName) ? string.Empty : form.LastName.Trim();
+        user.Language = string.IsNullOrWhiteSpace(form.Language) ? user.Language : form.Language.Trim();
+        user.IsRootAdmin = form.IsRootAdmin;
+
+        if (!string.IsNullOrWhiteSpace(form.NewPassword))
+        {
+            user.PasswordHash = _passwordHasher.Hash(form.NewPassword);
+        }
+
+        await _users.UpdateAsync(user, cancellationToken);
+
+        TempData["Success"] = $"Updated account {user.Username}.";
+
+        return RedirectToAction(nameof(Users));
+    }
+
+    [HttpGet("general")]
+    public IActionResult General() => View(_branding.Current);
+
+    [HttpPost("general")]
+    public async Task<IActionResult> General(
+        GeneralSettingsForm form,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = FirstError("Check the branding details and try again.");
+
+            return RedirectToAction(nameof(General));
+        }
+
+        if (form.RemoveLogo)
+        {
+            await _branding.RemoveLogoAsync(cancellationToken);
+        }
+
+        if (form.Logo is { Length: > 0 } logo)
+        {
+            var extension = Path.GetExtension(logo.FileName).ToLowerInvariant();
+
+            if (!AllowedLogoExtensions.Contains(extension))
+            {
+                TempData["Error"] = "The logo must be a PNG, JPEG, WebP, GIF or SVG image.";
+
+                return RedirectToAction(nameof(General));
+            }
+
+            if (logo.Length > 2 * 1024 * 1024)
+            {
+                TempData["Error"] = "The logo must be 2 MB or smaller.";
+
+                return RedirectToAction(nameof(General));
+            }
+
+            await using var stream = logo.OpenReadStream();
+            await _branding.SaveLogoAsync(stream, extension, cancellationToken);
+        }
+
+        await _branding.SaveAsync(
+            new PanelBranding
+            {
+                Name = string.IsNullOrWhiteSpace(form.Name) ? _options.App.Name : form.Name.Trim(),
+                HideSidebarLogo = form.HideSidebarLogo,
+            },
+            cancellationToken);
+
+        TempData["Success"] = "Panel branding updated.";
+
+        return RedirectToAction(nameof(General));
+    }
+
+    private static readonly string[] AllowedLogoExtensions =
+        [".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"];
 
     [HttpGet("servers")]
     public async Task<IActionResult> Servers(CancellationToken cancellationToken)

@@ -126,6 +126,12 @@
                             <td>
                                 <span class="table__primary">@template.Egg.Name</span>
                                 <span class="table__secondary">@(string.IsNullOrWhiteSpace(template.Egg.Description) ? template.Egg.Uuid.ToString() : template.Egg.Description)</span>
+                                @if (template.EditedAt is { } editedAt)
+                                {
+                                    <span class="table__secondary">
+                                        <time datetime="@editedAt.ToString("O")">@L["admin.games.edited"] @editedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</time>
+                                    </span>
+                                }
                             </td>
                             <td>
                                 @if (template.FromNest)

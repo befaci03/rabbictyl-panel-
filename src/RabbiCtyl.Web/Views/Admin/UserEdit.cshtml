@@ -1,0 +1,72 @@
+@model AdminUserEditViewModel
+@{
+    ViewData["Title"] = "Edit user";
+    var user = Model.User;
+}
+
+<section class="page">
+    <header class="page__header">
+        <div>
+            <span class="eyebrow">@L["admin.eyebrow"]</span>
+            <h1 class="page__title">Edit @user.DisplayName</h1>
+            <p class="page__subtitle">Update the profile, credentials and administrator access.</p>
+        </div>
+        <a class="button button--ghost" asp-controller="Admin" asp-action="Users">Back to users</a>
+    </header>
+
+    <partial name="_AdminTabs" />
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert--success" role="status">@success</div>
+    }
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert--danger" role="alert">@error</div>
+    }
+
+    <form method="post" asp-controller="Admin" asp-action="UpdateUser" asp-route-id="@user.Id" class="form card">
+        <div class="admin-create__grid">
+            <div class="form__group">
+                <label class="form__label" for="edit-user-first">First name</label>
+                <input class="form__input" id="edit-user-first" name="FirstName" value="@user.NameFirst" required maxlength="64" />
+            </div>
+            <div class="form__group">
+                <label class="form__label" for="edit-user-last">Last name (optional)</label>
+                <input class="form__input" id="edit-user-last" name="LastName" value="@user.NameLast" maxlength="64" />
+            </div>
+            <div class="form__group">
+                <label class="form__label" for="edit-user-username">Username</label>
+                <input class="form__input" id="edit-user-username" name="Username" value="@user.Username" required minlength="3" maxlength="32" autocomplete="off" />
+            </div>
+            <div class="form__group">
+                <label class="form__label" for="edit-user-email">Email</label>
+                <input class="form__input" id="edit-user-email" name="Email" value="@user.Email" type="email" required maxlength="255" autocomplete="off" />
+            </div>
+            <div class="form__group">
+                <label class="form__label" for="edit-user-language">Language</label>
+                <select class="form__input" id="edit-user-language" name="Language">
+                    <option value="en" selected="@(user.Language == "en")">English</option>
+                    <option value="fr" selected="@(user.Language == "fr")">Français</option>
+                </select>
+            </div>
+            <div class="form__group">
+                <label class="form__label" for="edit-user-password">New password</label>
+                <input class="form__input" id="edit-user-password" name="NewPassword" type="password" minlength="8" maxlength="128" autocomplete="new-password" />
+                <span class="form__hint">Leave blank to keep the current password.</span>
+            </div>
+        </div>
+
+        <div class="admin-create__checks">
+            <label class="form__check">
+                <input type="checkbox" name="IsRootAdmin" value="true" checked="@user.IsRootAdmin" />
+                Grant administrator access
+            </label>
+        </div>
+
+        <div class="admin-create__actions">
+            <button type="submit" class="button button--primary">Save changes</button>
+        </div>
+    </form>
+</section>

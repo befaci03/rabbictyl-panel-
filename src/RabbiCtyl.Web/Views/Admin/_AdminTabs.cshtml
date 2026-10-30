@@ -3,6 +3,8 @@
 }
 
 <nav class="tabs" aria-label="@L["admin.eyebrow"]">
+    <a class="tab @(current is "General" or "GeneralSaved" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="General">@L["admin.general"]</a>
     <a class="tab @(current == "Nodes" ? "is-active" : string.Empty)"
        asp-controller="Admin" asp-action="Nodes">@L["admin.nodes"]</a>
     <a class="tab @(current == "Servers" ? "is-active" : string.Empty)"

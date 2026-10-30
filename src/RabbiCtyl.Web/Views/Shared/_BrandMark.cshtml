@@ -1,5 +1,7 @@
 @{
-    var brandLogo = ViewData["BrandLogoUrl"] as string ?? Url.Content("~/logo.svg");
+    var brandLogo = Branding.LogoPath is not null
+        ? $"{Url.Content("~/panel/logo")}?v={Branding.LogoVersion}"
+        : ViewData["BrandLogoUrl"] as string ?? Url.Content("~/logo.svg");
 }
 
 <span class="brand__mark" aria-hidden="true">
