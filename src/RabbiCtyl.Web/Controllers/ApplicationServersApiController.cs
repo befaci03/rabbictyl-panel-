@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RabbiCtyl.Core.Abstractions;
 using RabbiCtyl.Core.Entities;
+using RabbiCtyl.Core.Extensions;
 using RabbiCtyl.Infrastructure.Pats;
 
 namespace RabbiCtyl.Web.Controllers;
@@ -14,6 +15,7 @@ public sealed class ApplicationServersApiController : ControllerBase
     private readonly IServerStore _servers;
     private readonly INodeStore _nodes;
     private readonly IUserStore _users;
+    private readonly IGameTemplateCatalog _templates;
     private readonly IPatsClientFactory _pats;
     private readonly ILogger<ApplicationServersApiController> _logger;
 
@@ -21,12 +23,14 @@ public sealed class ApplicationServersApiController : ControllerBase
         IServerStore servers,
         INodeStore nodes,
         IUserStore users,
+        IGameTemplateCatalog templates,
         IPatsClientFactory pats,
         ILogger<ApplicationServersApiController> logger)
     {
         _servers = servers;
         _nodes = nodes;
         _users = users;
+        _templates = templates;
         _pats = pats;
         _logger = logger;
     }
@@ -65,6 +69,19 @@ public sealed class ApplicationServersApiController : ControllerBase
             return ValidationProblem("A name and a valid allocation port are required.");
         }
 
+        Egg? egg = null;
+
+        if (!string.IsNullOrWhiteSpace(request.EggUuid)
+            && Guid.TryParse(request.EggUuid, out var eggUuid))
+        {
+            egg = (await _templates.FindAsync(eggUuid, cancellationToken))?.Egg;
+
+            if (egg is null)
+            {
+                return ValidationProblem("The selected game template does not exist.");
+            }
+        }
+
         var server = new Server
         {
             Uuid = Guid.NewGuid(),
@@ -97,6 +114,11 @@ public sealed class ApplicationServersApiController : ControllerBase
             BackupLimit = request.BackupLimit,
             Status = ServerStatus.Installing,
         };
+
+        if (egg is not null)
+        {
+            EggTemplate.ApplyTo(server, egg);
+        }
 
         server.DaemonConfigurationJson = PatsConfigurationBuilder.BuildSettings(server).GetRawText();
 

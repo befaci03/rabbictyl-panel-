@@ -37,6 +37,12 @@ public sealed class MongoDatabaseInitializer : IDatabaseInitializer
                 new CreateIndexOptions { Name = "ux_servers_uuid", Unique = true }),
             cancellationToken: cancellationToken);
 
+        await _database.GetCollection<Egg>("eggs").Indexes.CreateOneAsync(
+            new CreateIndexModel<Egg>(
+                Builders<Egg>.IndexKeys.Ascending(egg => egg.Uuid),
+                new CreateIndexOptions { Name = "ux_eggs_uuid", Unique = true }),
+            cancellationToken: cancellationToken);
+
         await _database.GetCollection<Node>("nodes").Indexes.CreateOneAsync(
             new CreateIndexModel<Node>(
                 Builders<Node>.IndexKeys.Ascending(node => node.DaemonTokenId),

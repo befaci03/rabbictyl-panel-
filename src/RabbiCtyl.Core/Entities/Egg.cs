@@ -33,6 +33,12 @@ public sealed class Egg : Entity
 
     public string? ScriptInstall { get; set; }
 
+    /// <summary>
+    /// Egg variables as a JSON array of <see cref="EggVariable"/> shaped objects.
+    /// Storing the list next to the egg keeps every provider identical.
+    /// </summary>
+    public string VariablesJson { get; set; } = "[]";
+
     [JsonIgnore]
     public ICollection<EggVariable> Variables { get; set; } = new List<EggVariable>();
 }

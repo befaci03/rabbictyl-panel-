@@ -1,0 +1,11 @@
+{
+  "id": "oauth2",
+  "name": "OAuth2 Sign-in",
+  "version": "1.1.0",
+  "description": "Server-side OAuth2 sign-in. Providers are managed in Administration \u2192 OAuth2.",
+  "author": "RabbiCtyl",
+  "enabled": true,
+  "assets": {
+    "icon": "assets/icon.svg"
+  }
+}

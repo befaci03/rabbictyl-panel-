@@ -54,3 +54,6 @@ TestResults/
 coverage/
 coverage.*
 *.trx
+
+# Local smoke-test artefacts
+.smoke*/

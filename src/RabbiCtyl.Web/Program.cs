@@ -75,6 +75,9 @@ if (options.Server.BehindProxy)
     app.UseForwardedHeaders();
 }
 
+// Serves the migration/maintenance page while the schema is being prepared.
+app.UseMiddleware<MaintenanceMiddleware>();
+
 app.UseStaticFiles();
 
 var supportedCultures = new[] { new CultureInfo("en"), new CultureInfo("fr") };
@@ -102,8 +105,6 @@ app.MapGet("/health", () => Results.Ok(new
     name = options.App.Name,
     environment = options.App.Environment,
 }));
-
-await app.Services.InitializePanelAsync();
 
 app.Run();
 
@@ -144,6 +145,7 @@ static void NormalizePaths(string contentRoot, PanelOptions options)
 {
     options.Themes.Directory = ResolveDirectory(contentRoot, options.Themes.Directory);
     options.Addons.Directory = ResolveDirectory(contentRoot, options.Addons.Directory);
+    options.Nests.Directory = ResolveDirectory(contentRoot, options.Nests.Directory);
     options.Storage.Directory = ResolvePath(contentRoot, options.Storage.Directory);
 
     static string ResolvePath(string root, string path) =>

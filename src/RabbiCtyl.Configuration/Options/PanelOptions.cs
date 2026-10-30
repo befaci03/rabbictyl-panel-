@@ -16,6 +16,8 @@ public sealed class PanelOptions
 
     public SecurityOptions Security { get; set; } = new();
 
+    public MailOptions Mail { get; set; } = new();
+
     public LoggingOptions Logging { get; set; } = new();
 
     public BootstrapOptions Bootstrap { get; set; } = new();
@@ -23,6 +25,8 @@ public sealed class PanelOptions
     public ThemeOptions Themes { get; set; } = new();
 
     public AddonOptions Addons { get; set; } = new();
+
+    public NestOptions Nests { get; set; } = new();
 
     public StorageOptions Storage { get; set; } = new();
 }

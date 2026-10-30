@@ -38,8 +38,9 @@ internal static class MongoMappings
             map.UnmapProperty(allocation => allocation.Server);
         });
         Register<ApiKey>(map => map.UnmapProperty(apiKey => apiKey.User));
-        Register<Egg>(_ => { });
+        Register<Egg>(map => map.UnmapProperty(egg => egg.Variables));
         Register<AuditLog>(_ => { });
+        Register<PanelState>(_ => { });
     }
 
     private static void Register<TEntity>(Action<BsonClassMap<TEntity>> configure)

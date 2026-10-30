@@ -1,8 +1,11 @@
 @model LoginViewModel
+@inject ICaptchaVerifier Captcha
+@inject PanelOptions PanelOptions
 @{
     Layout = await ThemeLayouts.ResolveAsync(Context, auth: true);
     ViewData["Title"] = "Sign in";
     var returnUrl = ViewData["ReturnUrl"] as string;
+    var providers = ViewData["OAuthProviders"] as IReadOnlyList<OAuthProvider> ?? Array.Empty<OAuthProvider>();
 }
 
 <section class="auth">
@@ -42,6 +45,11 @@
                     <div class="alert alert--success" role="status">@success</div>
                 }
 
+                @if (TempData["Error"] is string authError)
+                {
+                    <div class="alert alert--danger" role="alert">@authError</div>
+                }
+
                 <form method="post" asp-controller="Auth" asp-action="Login" asp-route-returnUrl="@returnUrl" class="form">
                     <div asp-validation-summary="ModelOnly" class="alert alert--danger"></div>
 
@@ -62,13 +70,76 @@
                         <span>@L["login.remember"]</span>
                     </label>
 
+                    <p class="auth__note auth__note--inline">
+                        <a asp-controller="Auth" asp-action="Forgot">@L["login.forgot"]</a>
+                    </p>
+
+                    @if (Captcha.Required)
+                    {
+                        <div class="form__group captcha" data-captcha-provider="@Captcha.Provider">
+                            <span class="form__label">@L["captcha.label"]</span>
+                            <input type="hidden" asp-for="CaptchaToken" data-captcha-token />
+                            @if (Captcha.Provider == "hcaptcha")
+                            {
+                                <div class="h-captcha" data-sitekey="@Captcha.SiteKey" data-callback="rabbictylCaptchaSolved"></div>
+                            }
+                            else
+                            {
+                                <div class="cf-turnstile" data-sitekey="@Captcha.SiteKey" data-callback="rabbictylCaptchaSolved"></div>
+                            }
+                            <span class="form__hint">@L["captcha.hint"]</span>
+                        </div>
+                    }
+
                     <button type="submit" class="button button--primary button--block">@L["login.submit"]</button>
                 </form>
+
+                @if (providers.Count > 0)
+                {
+                    <div class="form">
+                        <span class="form__label">@L["login.or"]</span>
+                        @foreach (var provider in providers)
+                        {
+                            <a class="button button--ghost button--block"
+                               asp-controller="OAuth" asp-action="Challenge" asp-route-id="@provider.Id">
+                                @L["login.oauth"] @provider.Name
+                            </a>
+                        }
+                    </div>
+                }
 
                 <p class="auth__note">
                     First run? Sign in with the bootstrap administrator from <code>config/panel.toml</code>.
                     You will be asked to create your own account.
                 </p>
+
+                @if (PanelOptions.Security.AllowRegistration)
+                {
+                    <p class="auth__note">
+                        @L["register.noAccount"]
+                        <a asp-controller="Auth" asp-action="Register">@L["register.submit"]</a>
+                    </p>
+                }
+
+                @if (Captcha.Required)
+                {
+                    <script>
+                        function rabbictylCaptchaSolved(token) {
+                            var field = document.querySelector('[data-captcha-token]');
+                            if (field) {
+                                field.value = token;
+                            }
+                        }
+                    </script>
+                    if (Captcha.Provider == "hcaptcha")
+                    {
+                        <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+                    }
+                    else
+                    {
+                        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+                    }
+                }
             </div>
         </div>
     </div>

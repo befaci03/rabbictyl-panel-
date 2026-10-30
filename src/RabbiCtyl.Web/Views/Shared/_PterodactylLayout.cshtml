@@ -109,10 +109,10 @@
 
             <div class="ptero-sidebar__footer">
                 <div class="ptero-user">
-                    <span class="ptero-user__meta">
+                    <a class="ptero-user__meta" asp-controller="Account" asp-action="Index" title="@L["nav.account"]">
                         <span class="ptero-user__name">@displayName</span>
                         <span class="ptero-user__role">@(isAdmin ? L["role.admin"] : L["role.member"])</span>
-                    </span>
+                    </a>
                     <form method="post" asp-controller="Auth" asp-action="Logout" class="user-chip__form">
                         <button type="submit" class="icon-button" title="@L["nav.signout"]" aria-label="@L["nav.signout"]">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">

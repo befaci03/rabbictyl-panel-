@@ -368,6 +368,30 @@ if (fileBrowser) {
   void load("/");
 }
 
+document.querySelectorAll<HTMLElement>("[data-dialog-open]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const id = button.dataset.dialogOpen;
+    const dialog = id ? document.getElementById(id) : null;
+
+    if (dialog instanceof HTMLDialogElement) {
+      dialog.showModal();
+    }
+  });
+});
+
+document.querySelectorAll<HTMLDialogElement>("dialog[data-dialog]").forEach((dialog) => {
+  dialog.querySelectorAll<HTMLElement>("[data-dialog-close]").forEach((button) => {
+    button.addEventListener("click", () => dialog.close());
+  });
+
+  // Clicking the backdrop closes the dialog; clicks inside the content do not.
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) {
+      dialog.close();
+    }
+  });
+});
+
 if (authenticated) {
   void connectRealtime().catch((error: unknown) => {
     // Realtime is an enhancement; never break the page when it is unavailable.

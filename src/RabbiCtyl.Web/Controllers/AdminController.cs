@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RabbiCtyl.Configuration.Options;
 using RabbiCtyl.Core.Abstractions;
 using RabbiCtyl.Core.Entities;
+using RabbiCtyl.Core.Extensions;
 using RabbiCtyl.Infrastructure.Pats;
 using RabbiCtyl.Web.Models;
 
@@ -16,6 +17,9 @@ public sealed class AdminController : Controller
     private readonly IUserStore _users;
     private readonly IServerStore _servers;
     private readonly INodeStore _nodes;
+    private readonly IEggStore _eggs;
+    private readonly IGameTemplateCatalog _templates;
+    private readonly IOAuthProviderStore _oauth;
     private readonly IAddonCatalog _addons;
     private readonly IAddonState _addonState;
     private readonly IPatsClientFactory _pats;
@@ -27,6 +31,9 @@ public sealed class AdminController : Controller
         IUserStore users,
         IServerStore servers,
         INodeStore nodes,
+        IEggStore eggs,
+        IGameTemplateCatalog templates,
+        IOAuthProviderStore oauth,
         IAddonCatalog addons,
         IAddonState addonState,
         IPatsClientFactory pats,
@@ -37,6 +44,9 @@ public sealed class AdminController : Controller
         _users = users;
         _servers = servers;
         _nodes = nodes;
+        _eggs = eggs;
+        _templates = templates;
+        _oauth = oauth;
         _addons = addons;
         _addonState = addonState;
         _pats = pats;
@@ -182,6 +192,7 @@ public sealed class AdminController : Controller
         {
             Nodes = nodes.Values.OrderBy(node => node.Name).ToList(),
             Users = users.Values.OrderBy(user => user.DisplayName).ToList(),
+            Eggs = await _templates.ListAsync(cancellationToken),
             Servers = servers
                 .Select(server => new AdminServerRow(
                     server,
@@ -221,6 +232,29 @@ public sealed class AdminController : Controller
             return RedirectToAction(nameof(Servers));
         }
 
+        Egg? egg = null;
+        var fromNest = false;
+
+        if (form.EggUuid is { } eggUuid && eggUuid != Guid.Empty)
+        {
+            var template = await _templates.FindAsync(eggUuid, cancellationToken);
+            egg = template?.Egg;
+            fromNest = template?.FromNest == true;
+
+            if (egg is null)
+            {
+                TempData["Error"] = "The selected game template does not exist.";
+
+                return RedirectToAction(nameof(Servers));
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(form.Startup) || string.IsNullOrWhiteSpace(form.Image))
+        {
+            TempData["Error"] = "Pick a game template or provide a startup command and container image.";
+
+            return RedirectToAction(nameof(Servers));
+        }
+
         var server = new Server
         {
             Uuid = Guid.NewGuid(),
@@ -239,6 +273,25 @@ public sealed class AdminController : Controller
                 new Dictionary<string, int[]> { [form.AllocationIp.Trim()] = [form.AllocationPort] }),
             Status = ServerStatus.Installing,
         };
+
+        if (egg is not null)
+        {
+            // Nest templates live in TOML files and are re-read on every request, so
+            // their in-memory id is not a database row. Keep one stored copy per nest
+            // egg uuid; the server points at that row instead of a dangling id.
+            if (fromNest)
+            {
+                egg = await _eggs.FindByUuidAsync(egg.Uuid, cancellationToken) ?? egg;
+
+                if (await _eggs.FindByIdAsync(egg.Id, cancellationToken) is null)
+                {
+                    await _eggs.AddAsync(egg, cancellationToken);
+                }
+            }
+
+            EggTemplate.ApplyTo(server, egg);
+            server.StartupCommand = egg.StartupCommand;
+        }
 
         server.DaemonConfigurationJson = PatsConfigurationBuilder.BuildSettings(server).GetRawText();
 
@@ -263,6 +316,198 @@ public sealed class AdminController : Controller
         }
 
         return RedirectToAction(nameof(Servers));
+    }
+
+    [HttpGet("games")]
+    public async Task<IActionResult> Games(CancellationToken cancellationToken) =>
+        View(await _templates.ListAsync(cancellationToken));
+
+    [HttpPost("games/create")]
+    public async Task<IActionResult> CreateGame(
+        CreateGameTemplateForm form,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = FirstError("Check the game template and try again.");
+
+            return RedirectToAction(nameof(Games));
+        }
+
+        var egg = new Egg
+        {
+            Uuid = Guid.NewGuid(),
+            Name = form.Name.Trim(),
+            Description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim(),
+            Author = string.IsNullOrWhiteSpace(form.Author) ? string.Empty : form.Author.Trim(),
+            DockerImage = form.Image.Trim(),
+            DockerImagesJson = System.Text.Json.JsonSerializer.Serialize(
+                new Dictionary<string, string> { ["default"] = form.Image.Trim() }),
+            StartupCommand = form.Startup.Trim(),
+            ScriptContainer = string.IsNullOrWhiteSpace(form.ScriptContainer) ? "alpine:3.20" : form.ScriptContainer.Trim(),
+            ScriptEntrypoint = string.IsNullOrWhiteSpace(form.ScriptEntrypoint) ? "ash" : form.ScriptEntrypoint.Trim(),
+            ScriptInstall = string.IsNullOrWhiteSpace(form.InstallScript) ? null : form.InstallScript.Trim(),
+            ProcessConfigurationJson = EggTemplate.BuildProcessConfiguration(
+                SplitLines(form.DonePatterns),
+                form.StopType,
+                form.StopValue),
+            VariablesJson = EggTemplate.BuildVariables(SplitLines(form.Variables)),
+        };
+
+        await _eggs.AddAsync(egg, cancellationToken);
+
+        TempData["Success"] = $"Added game template {egg.Name}.";
+
+        return RedirectToAction(nameof(Games));
+    }
+
+    [HttpPost("games/{uuid}/delete")]
+    public async Task<IActionResult> DeleteGame(string uuid, CancellationToken cancellationToken)
+    {
+        var egg = Guid.TryParse(uuid, out var value)
+            ? await _eggs.FindByUuidAsync(value, cancellationToken)
+            : null;
+
+        if (egg is null)
+        {
+            return NotFound();
+        }
+
+        var usedByServer = (await _servers.ListAsync(cancellationToken))
+            .Any(server => server.EggId == egg.Id);
+
+        if (usedByServer)
+        {
+            TempData["Error"] = $"{egg.Name} is still used by a server. Delete or recreate those servers first.";
+
+            return RedirectToAction(nameof(Games));
+        }
+
+        await _eggs.DeleteAsync(egg, cancellationToken);
+
+        TempData["Success"] = $"Deleted game template {egg.Name}.";
+
+        return RedirectToAction(nameof(Games));
+    }
+
+    [HttpGet("oauth2")]
+    public async Task<IActionResult> OAuth2(CancellationToken cancellationToken)
+    {
+        var enabledAddons = await _addons.ListAsync(enabledOnly: true, cancellationToken: cancellationToken);
+
+        return View(new OAuthAdminViewModel
+        {
+            Providers = await _oauth.ListAsync(cancellationToken),
+            AddonEnabled = enabledAddons.Any(addon =>
+                string.Equals(addon.Id, "oauth2", StringComparison.OrdinalIgnoreCase)),
+        });
+    }
+
+    [HttpPost("oauth2/create")]
+    public async Task<IActionResult> CreateOAuthProvider(
+        OAuthProviderForm form,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = FirstError("Check the OAuth2 provider details and try again.");
+
+            return RedirectToAction(nameof(OAuth2));
+        }
+
+        var id = form.Id.Trim().ToLowerInvariant();
+
+        if (await _oauth.FindAsync(id, cancellationToken) is not null)
+        {
+            TempData["Error"] = $"A provider with the id '{id}' already exists.";
+
+            return RedirectToAction(nameof(OAuth2));
+        }
+
+        await _oauth.SaveAsync(
+            new OAuthProvider
+            {
+                Id = id,
+                Name = form.Name.Trim(),
+                ClientId = form.ClientId.Trim(),
+                ClientSecret = form.ClientSecret.Trim(),
+                AuthorizeUrl = form.AuthorizeUrl.Trim(),
+                TokenUrl = form.TokenUrl.Trim(),
+                UserInfoUrl = form.UserInfoUrl.Trim(),
+                Scopes = form.Scopes.Trim(),
+                UserIdField = form.UserIdField.Trim(),
+                EmailField = form.EmailField.Trim(),
+                UsernameField = form.UsernameField.Trim(),
+                DisplayNameField = form.DisplayNameField.Trim(),
+                Enabled = form.Enabled,
+            },
+            cancellationToken);
+
+        TempData["Success"] = $"Added the {form.Name} sign-in provider.";
+
+        return RedirectToAction(nameof(OAuth2));
+    }
+
+    [HttpPost("oauth2/{id}/update")]
+    public async Task<IActionResult> UpdateOAuthProvider(
+        string id,
+        OAuthProviderEditForm form,
+        CancellationToken cancellationToken)
+    {
+        var provider = await _oauth.FindAsync(id, cancellationToken);
+
+        if (provider is null)
+        {
+            return NotFound();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = FirstError("Check the OAuth2 provider details and try again.");
+
+            return RedirectToAction(nameof(OAuth2));
+        }
+
+        provider.Name = form.Name.Trim();
+        provider.ClientId = form.ClientId.Trim();
+
+        if (!string.IsNullOrWhiteSpace(form.ClientSecret))
+        {
+            provider.ClientSecret = form.ClientSecret.Trim();
+        }
+
+        provider.AuthorizeUrl = form.AuthorizeUrl.Trim();
+        provider.TokenUrl = form.TokenUrl.Trim();
+        provider.UserInfoUrl = form.UserInfoUrl.Trim();
+        provider.Scopes = form.Scopes.Trim();
+        provider.UserIdField = form.UserIdField.Trim();
+        provider.EmailField = form.EmailField.Trim();
+        provider.UsernameField = form.UsernameField.Trim();
+        provider.DisplayNameField = form.DisplayNameField.Trim();
+        provider.Enabled = form.Enabled;
+
+        await _oauth.SaveAsync(provider, cancellationToken);
+
+        TempData["Success"] = $"Updated the {provider.Name} sign-in provider.";
+
+        return RedirectToAction(nameof(OAuth2));
+    }
+
+    [HttpPost("oauth2/{id}/delete")]
+    public async Task<IActionResult> DeleteOAuthProvider(string id, CancellationToken cancellationToken)
+    {
+        var provider = await _oauth.FindAsync(id, cancellationToken);
+
+        if (provider is null)
+        {
+            return NotFound();
+        }
+
+        await _oauth.DeleteAsync(provider.Id, cancellationToken);
+
+        TempData["Success"] = $"Removed the {provider.Name} sign-in provider.";
+
+        return RedirectToAction(nameof(OAuth2));
     }
 
     [HttpGet("addons")]
@@ -299,6 +544,10 @@ public sealed class AdminController : Controller
 
     private async Task<Node?> FindNodeAsync(string uuid, CancellationToken cancellationToken) =>
         Guid.TryParse(uuid, out var value) ? await _nodes.FindByUuidAsync(value, cancellationToken) : null;
+
+    private static IEnumerable<string> SplitLines(string? value) =>
+        (value ?? string.Empty)
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     private string FirstError(string fallback) =>
         ModelState.Values

@@ -26,6 +26,8 @@ public sealed class PanelDbContext : DbContext
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    public DbSet<PanelState> PanelStates => Set<PanelState>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PanelDbContext).Assembly);

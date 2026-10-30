@@ -43,6 +43,13 @@
         <span>@L["nav.dashboard"]</span>
     </a>
 
+    <a class="@NavClass("Home", "Overview")" asp-controller="Home" asp-action="Overview" title="@L["nav.overview"]">
+        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path d="M4 19.5V10M10 19.5V5M16 19.5v-6M22 19.5H2" />
+        </svg>
+        <span>@L["nav.overview"]</span>
+    </a>
+
     @if (currentServer is not null)
     {
         <span class="nav__label nav__label--server">

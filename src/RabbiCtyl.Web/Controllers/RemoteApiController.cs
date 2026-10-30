@@ -191,7 +191,12 @@ public sealed class RemoteApiController : ControllerBase
         var login = request.Username.Split('.', 2)[0];
         var user = await _users.FindByLoginAsync(login, cancellationToken);
 
-        if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
+        var authorized = user is not null
+            && (string.Equals(request.Type, "public_key", StringComparison.OrdinalIgnoreCase)
+                ? RabbiCtyl.Core.Extensions.SshKeys.Matches(user, request.Password)
+                : _passwordHasher.Verify(request.Password, user.PasswordHash));
+
+        if (user is null || !authorized)
         {
             return Unauthorized(new { error = "The credentials provided were invalid." });
         }
@@ -202,11 +207,13 @@ public sealed class RemoteApiController : ControllerBase
         {
             var suffix = request.Username.Split('.', 2)[1];
             servers = servers
-                .Where(server => server.Uuid.ToString("N").StartsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                .Where(server => ShortIdentifier(server).Equals(suffix, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
-        var server = servers.FirstOrDefault(server => server.NodeId == Node.Id);
+        // Suspended servers drop SFTP sessions exactly like Pterodactyl does, and
+        // only servers that live on the calling node may authenticate.
+        var server = servers.FirstOrDefault(server => server.NodeId == Node.Id && !server.Suspended);
 
         return server is null
             ? Unauthorized(new { error = "The credentials provided were invalid." })
@@ -230,6 +237,9 @@ public sealed class RemoteApiController : ControllerBase
 
     [HttpPost("activity")]
     public IActionResult Activity([FromBody] System.Text.Json.JsonElement activity) => NoContent();
+
+    private static string ShortIdentifier(Server server) =>
+        server.Uuid.ToString("N")[..8];
 
     private async Task<Server?> FindServerAsync(string uuid, CancellationToken cancellationToken)
     {

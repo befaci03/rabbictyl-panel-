@@ -45,9 +45,33 @@ session_lifetime_minutes = 120
 bcrypt_work_factor = 12
 require_https = false
 
+# Let visitors create their own account from the sign-in page.
+allow_registration = false
+
+[security.captcha]
+# Human check on the sign-in form: none | turnstile | hcaptcha
+# Turnstile keys: https://dash.cloudflare.com/?to=/:account/turnstile
+# hCaptcha keys: https://dashboard.hcaptcha.com/sites
+provider = "none"
+site_key = ""
+secret_key = ""
+
 [logging]
 # Trace | Debug | Information | Warning | Error | Critical | None
 level = "Information"
+
+[mail]
+# SMTP delivery for password reset mail. Leave enabled = false to keep mail off.
+enabled = false
+host = ""
+port = 587
+# none | starttls | ssl
+encryption = "starttls"
+username = ""
+password = ""
+from_address = ""
+from_name = "RabbiCtyl"
+timeout_seconds = 15
 
 [themes]
 # Theme folders live here. Each folder needs a manifest.json.
@@ -58,6 +82,10 @@ active = "default_dark"
 [addons]
 # Addon folders live here. Each folder needs a manifest.json.
 directory = "addons"
+
+[nests]
+# Nest files live here; each *.toml file defines a nest and its eggs.
+directory = "nests"
 
 [storage]
 # Runtime state (active theme, etc). Keep this writable by the panel process.

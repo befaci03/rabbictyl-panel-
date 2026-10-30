@@ -1,0 +1,103 @@
+@model OverviewViewModel
+@{
+    ViewData["Title"] = L["overview.title"].ToString();
+    var isAdmin = User.IsInRole("admin");
+    var buckets = new[]
+    {
+        new { Key = "running", Label = L["overview.running"].ToString(), Count = Model.Running.Count, Rows = Model.Running },
+        new { Key = "busy", Label = L["overview.busy"].ToString(), Count = Model.Busy.Count, Rows = Model.Busy },
+        new { Key = "offline", Label = L["overview.offline"].ToString(), Count = Model.Offline.Count, Rows = Model.Offline },
+        new { Key = "failed", Label = L["overview.failed"].ToString(), Count = Model.Failed.Count, Rows = Model.Failed },
+    };
+}
+
+<section class="page">
+    <header class="page__header">
+        <div>
+            <span class="eyebrow">@L["nav.workspace"]</span>
+            <h1 class="page__title">@L["overview.title"]</h1>
+            <p class="page__subtitle">@L["overview.subtitle"]</p>
+        </div>
+        <span class="pill pill--muted">@Model.Total</span>
+    </header>
+
+    <div class="overview-grid">
+        @foreach (var bucket in buckets)
+        {
+            <article class="overview-card card" data-overview="@bucket.Key">
+                <div class="overview-card__head">
+                    <span class="badge badge--@bucket.Key">@bucket.Label</span>
+                    <span class="overview-card__count">@bucket.Count</span>
+                </div>
+                <p class="overview-card__hint">@L[$"overview.{bucket.Key}.hint"]</p>
+                <button type="button"
+                        class="button button--ghost button--sm"
+                        data-dialog-open="overview-@bucket.Key"
+                        disabled="@(bucket.Count == 0)">
+                    @L["overview.view"]
+                </button>
+            </article>
+        }
+    </div>
+
+    @foreach (var bucket in buckets)
+    {
+        <dialog class="modal" id="overview-@bucket.Key" data-dialog aria-label="@bucket.Label">
+            <header class="modal__header">
+                <h2 class="modal__title">@bucket.Label <span class="pill pill--muted">@bucket.Count</span></h2>
+                <button type="button" class="icon-button" data-dialog-close aria-label="@L["overview.close"]">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path d="m6 6 12 12M18 6 6 18" />
+                    </svg>
+                </button>
+            </header>
+            <div class="modal__body">
+                @if (bucket.Count == 0)
+                {
+                    <p class="form__hint">@L["overview.empty"]</p>
+                }
+                else
+                {
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>@L["home.servers"]</th>
+                                    <th>@L["overview.state"]</th>
+                                    <th>@L["home.node"]</th>
+                                    @if (isAdmin)
+                                    {
+                                        <th>@L["home.owner"]</th>
+                                    }
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var row in bucket.Rows)
+                            {
+                                <tr>
+                                    <td class="table__primary">@row.Server.Name</td>
+                                    <td>
+                                        <span class="badge badge--@bucket.Key">@(string.IsNullOrWhiteSpace(row.LiveState) ? row.Server.Status.ToString() : row.LiveState)</span>
+                                    </td>
+                                    <td>@row.NodeName</td>
+                                    @if (isAdmin)
+                                    {
+                                        <td>@row.OwnerName</td>
+                                    }
+                                    <td class="table__actions">
+                                        <a class="button button--ghost button--sm"
+                                           asp-controller="Server" asp-action="Index" asp-route-uuid="@row.Server.Uuid">
+                                            @L["server.manage"]
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </dialog>
+    }
+</section>

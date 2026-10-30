@@ -66,6 +66,18 @@
                             </select>
                         </div>
                         <div class="form__group">
+                            <label class="form__label" for="server-egg">@L["admin.games.template"]</label>
+                            <select class="form__input" id="server-egg" name="EggUuid">
+                                <option value="">@L["admin.games.noTemplate"]</option>
+                                @foreach (var template in Model.Eggs)
+                                {
+                                    <option value="@template.Egg.Uuid">
+                                        @(template.NestName is null ? template.Egg.Name : $"{template.NestName} / {template.Egg.Name}")
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form__group">
                             <label class="form__label" for="server-description">Description</label>
                             <input class="form__input" id="server-description" name="Description" maxlength="255" placeholder="Optional" />
                         </div>
@@ -97,7 +109,8 @@
 
                     <div class="form__group">
                         <label class="form__label" for="server-startup">Startup command</label>
-                        <input class="form__input" id="server-startup" name="Startup" value="java -Xms128M -Xmx1024M -jar server.jar" required />
+                        <input class="form__input" id="server-startup" name="Startup" value="java -Xms128M -Xmx1024M -jar server.jar" />
+                        <span class="form__hint">@L["admin.games.manualHint"]</span>
                     </div>
 
                     <div class="admin-create__actions">

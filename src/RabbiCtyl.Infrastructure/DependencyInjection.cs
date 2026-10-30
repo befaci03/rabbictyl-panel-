@@ -6,6 +6,7 @@ using MongoDB.Driver;
 using RabbiCtyl.Configuration.Options;
 using RabbiCtyl.Core.Abstractions;
 using RabbiCtyl.Infrastructure.Extensions;
+using RabbiCtyl.Infrastructure.Maintenance;
 using RabbiCtyl.Infrastructure.Pats;
 using RabbiCtyl.Infrastructure.Persistence.Cassandra;
 using RabbiCtyl.Infrastructure.Persistence.Mongo;
@@ -27,6 +28,7 @@ public static class DependencyInjection
         services.AddSingleton(options.Database);
         services.AddSingleton(options.Security);
         services.AddSingleton(options.Bootstrap);
+        services.AddSingleton(options.Mail);
         services.AddMemoryCache();
 
         services.AddSingleton<IClock, SystemClock>();
@@ -36,7 +38,18 @@ public static class DependencyInjection
         services.AddScoped<IAdminSeeder, AdminSeeder>();
 
         services.AddHttpClient("pats", client => client.Timeout = TimeSpan.FromSeconds(30));
+        services.AddHttpClient("captcha", client => client.Timeout = TimeSpan.FromSeconds(10));
+        services.AddHttpClient("oauth", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(20);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("RabbiCtyl/1.0");
+        });
         services.AddSingleton<IPatsClientFactory, PatsClientFactory>();
+        services.AddSingleton<ICaptchaVerifier, CaptchaVerifier>();
+        services.AddSingleton<IEmailSender, Mail.SmtpEmailSender>();
+        services.AddSingleton<IOAuthProviderStore>(provider => new FileSystemOAuthProviderStore(
+            Path.Combine(options.Storage.Directory, "oauth2.json"),
+            provider.GetRequiredService<ILogger<FileSystemOAuthProviderStore>>()));
 
         AddExtensions(services, options);
 
@@ -100,6 +113,17 @@ public static class DependencyInjection
             provider.GetRequiredService<IThemeCatalog>(),
             provider.GetRequiredService<ILogger<FileSystemThemeState>>()));
 
+        services.AddSingleton<INestCatalog>(provider => new FileSystemNestCatalog(
+            options.Nests.Directory,
+            provider.GetRequiredService<ILogger<FileSystemNestCatalog>>()));
+
+        services.AddScoped<IGameTemplateCatalog, GameTemplateCatalog>();
+
+        // The schema is created/migrated in the background; requests are answered
+        // with the maintenance page until this singleton reports ready.
+        services.AddSingleton<MaintenanceState>();
+        services.AddHostedService<DatabaseInitializationService>();
+
         services.AddHostedService<AddonHost>();
     }
 
@@ -108,6 +132,8 @@ public static class DependencyInjection
         services.AddScoped<IUserStore, EfUserStore>();
         services.AddScoped<IServerStore, EfServerStore>();
         services.AddScoped<INodeStore, EfNodeStore>();
+        services.AddScoped<IEggStore, EfEggStore>();
+        services.AddScoped<IPanelStateStore, EfPanelStateStore>();
         services.AddScoped<IDatabaseInitializer, RelationalDatabaseInitializer>();
     }
 
@@ -128,6 +154,8 @@ public static class DependencyInjection
         services.AddScoped<IUserStore, MongoUserStore>();
         services.AddScoped<IServerStore, MongoServerStore>();
         services.AddScoped<INodeStore, MongoNodeStore>();
+        services.AddScoped<IEggStore, MongoEggStore>();
+        services.AddScoped<IPanelStateStore, MongoPanelStateStore>();
         services.AddScoped<IDatabaseInitializer, MongoDatabaseInitializer>();
     }
 
@@ -146,6 +174,8 @@ public static class DependencyInjection
         services.AddScoped<IUserStore, CassandraUserStore>();
         services.AddScoped<IServerStore, CassandraServerStore>();
         services.AddScoped<INodeStore, CassandraNodeStore>();
+        services.AddScoped<IEggStore, CassandraEggStore>();
+        services.AddScoped<IPanelStateStore, CassandraPanelStateStore>();
         services.AddScoped<IDatabaseInitializer, CassandraDatabaseInitializer>();
     }
 

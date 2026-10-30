@@ -2625,3 +2625,175 @@ code {
   font-size: 11.5px;
   font-weight: 600;
 }
+
+// --- Account page, registration and captcha -------------------------------
+
+a.user-chip__meta,
+a.ptero-user__meta {
+  color: inherit;
+  text-decoration: none;
+}
+
+a.user-chip__meta:hover .user-chip__name,
+a.ptero-user__meta:hover .ptero-user__name {
+  color: var(--accent-strong);
+}
+
+.form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0 14px;
+}
+
+.captcha > div {
+  min-height: 65px;
+}
+
+.key-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.key-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.key-list__value {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Emails are blurred until hovered or focused, so shoulder-surfers in the admin
+// table and the account page cannot read addresses at a glance.
+.email-mask {
+  filter: blur(4.5px);
+  border-radius: 3px;
+  cursor: help;
+  transition: filter 0.15s ease;
+}
+
+.email-mask:hover,
+.email-mask:focus-visible {
+  filter: none;
+  outline: 1px dashed var(--border-strong);
+  outline-offset: 2px;
+}
+
+.auth__note--inline {
+  margin: 0;
+  font-size: 12px;
+}
+
+.alert--warning {
+  border-color: rgb(242 193 78 / 40%);
+  background: rgb(242 193 78 / 10%);
+  color: var(--warning);
+}
+
+// --- Status overview -------------------------------------------------------
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.overview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.overview-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.overview-card__count {
+  color: var(--text);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.overview-card__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.overview-card .button {
+  align-self: flex-start;
+}
+
+.badge--busy {
+  background: rgb(242 193 78 / 12%);
+  color: var(--warning);
+}
+
+.badge--offline {
+  background: rgb(139 151 169 / 12%);
+  color: var(--muted);
+}
+
+.badge--failed {
+  background: rgb(255 115 115 / 12%);
+  color: var(--danger);
+}
+
+// --- Dialogs ---------------------------------------------------------------
+
+dialog.modal {
+  width: min(760px, 94vw);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+dialog.modal::backdrop {
+  background: rgb(4 6 10 / 68%);
+  backdrop-filter: blur(3px);
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.modal__body {
+  max-height: min(70vh, 620px);
+  overflow: auto;
+  padding: 18px;
+}

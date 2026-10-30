@@ -50,13 +50,127 @@ The bootstrap username and email cannot be reused for the new account, so the te
 account is always fully removed. If the user table is not empty, no bootstrap account is
 created and this flow never runs.
 
+## Sign-in protection
+
+The sign-in form can require a human check. Pick the provider in `config/panel.toml`:
+
+```toml
+[security.captcha]
+provider = "turnstile"   # none | turnstile | hcaptcha
+site_key = "..."
+secret_key = "..."
+```
+
+Both Cloudflare Turnstile and hCaptcha are supported; the panel verifies the token
+server side before it checks credentials. Set `provider = "none"` to disable it.
+Registration is off by default; set `allow_registration = true` under `[security]` to let
+visitors create their own account. The same captcha protects the registration form.
+
+## Email (SMTP)
+
+Password resets need outgoing mail. Configure SMTP in `config/panel.toml`:
+
+```toml
+[mail]
+enabled = true
+host = "smtp.example.com"
+port = 587
+encryption = "starttls"   # none | starttls | ssl
+username = "panel"
+password = "..."
+from_address = "panel@example.com"
+from_name = "RabbiCtyl"
+timeout_seconds = 15
+```
+
+With mail enabled, `/auth/forgot` sends a one-hour reset link; the token is stored as a
+SHA-256 hash and cleared once it is used. With mail disabled the page tells the user to
+ask an administrator, and nothing is sent.
+
 ## Panel areas
 
 - `/` — dashboard with the servers assigned to your account
+- `/server/{uuid}` — console, files, backups, CRON, users, startup and settings for a server
+- `/account` — password, SFTP public keys and profile
 - `/themes` — installed themes; administrators can activate a theme
-- `/admin/nodes`, `/admin/servers`, `/admin/users`, `/admin/addons` — administrator-only
-  listings, separated from the client dashboard the same way Pterodactyl separates its
-  admin area. Addons are visible to administrators only.
+- `/admin/nodes`, `/admin/servers`, `/admin/users`, `/admin/games`, `/admin/addons` —
+  administrator-only listings, separated from the client dashboard the same way
+  Pterodactyl separates its admin area. Addons are visible to administrators only.
+
+## Nests and game templates
+
+Nests are TOML files in `nests/`. Every `[[egg]]` entry becomes a game template:
+
+```toml
+id = "minecraft"
+name = "Minecraft"
+author = "RabbiCtyl"
+
+[[egg]]
+id = "java"
+name = "Minecraft Java"
+docker_image = "ghcr.io/pterodactyl/yolks:java_21"
+startup = "java -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
+done = ['regex:.*Done .*']
+stop_value = "stop"
+script_install = "..."
+
+[egg.variables]
+SERVER_JARFILE = "server.jar"
+```
+
+`done` is the list of console patterns that mark a server as running. Leave the list
+empty and pats marks the server running as soon as it boots, skipping the busy state.
+Nest templates are read-only in the panel; edit the TOML file. `/admin/games` also
+lets administrators create panel templates in the database, and server creation
+copies the selected template's startup, image, process configuration, install script
+and default environment onto the server.
+
+Application API: `GET /api/application/nests`, `GET /api/application/nests/{id}` and
+`GET/POST /api/application/eggs`, `GET/PATCH/DELETE /api/application/eggs/{uuid}`.
+API-created templates are editable; nest templates return `409` on write attempts.
+
+## Status overview
+
+`/overview` groups every visible server into running, busy, offline and failed. The
+state is read from pats with a short timeout and falls back to the stored status when
+a node is unreachable. Each card has a **View** button that opens a dialog with the
+servers in that state; administrators see all servers, other users see their own.
+
+## Database version and maintenance page
+
+The `_state_` table holds a single row with the schema `version` the database was
+created with. On startup the panel compares it with the version it expects:
+
+- equal → the panel opens normally;
+- older → the console prints `migration in progress of your database...`, the schema
+  is upgraded and the website answers with a maintenance page showing both versions,
+  the phase and an ETA (the page refreshes itself);
+- newer → the panel refuses to run and the maintenance page explains that the panel
+  must be upgraded first, instead of letting an old build touch a newer schema.
+
+## OAuth2 sign-in
+
+OAuth2 is a built-in feature exposed through the `oauth2` add-on, which is enabled by
+default and has no browser script: the whole flow runs server side. Manage providers
+under `/admin/oauth2` (add, edit, remove, enable/disable). Each provider needs the
+authorize, token and user-info URLs plus the JSON fields to read the id, email and
+name from. Register this callback URL with the provider:
+
+```text
+{app.url}/auth/oauth/{provider-id}/callback
+```
+
+The client secret is stored in `storage/oauth2.json`. Users are matched by email;
+when registration is disabled only existing panel accounts can sign in. Disabling the
+`oauth2` add-on hides the provider buttons and rejects the flow.
+
+## SFTP
+
+The SFTP server is part of pats; the panel authenticates it through
+`POST /api/remote/sftp/auth`. Users sign in as `<username>.<first 8 characters of the
+server UUID>` with their panel password, or with an SSH key stored in `/account`.
+Suspended servers and servers on another node are refused.
 
 ## Checks
 

@@ -1,4 +1,5 @@
 using RabbiCtyl.Core.Entities;
+using RabbiCtyl.Core.Extensions;
 
 namespace RabbiCtyl.Web.Models;
 
@@ -9,6 +10,8 @@ public sealed class AdminServersViewModel
     public IReadOnlyList<Node> Nodes { get; init; } = [];
 
     public IReadOnlyList<User> Users { get; init; } = [];
+
+    public IReadOnlyList<GameTemplate> Eggs { get; init; } = [];
 }
 
 public sealed record AdminServerRow(Server Server, string OwnerName, string NodeName);

@@ -22,6 +22,14 @@ public sealed class User : Entity
 
     public string Language { get; set; } = "en";
 
+    /// <summary>Authorized SFTP public keys, stored as a JSON array of strings.</summary>
+    public string SshKeysJson { get; set; } = "[]";
+
+    /// <summary>SHA-256 of the pending password reset token, if any.</summary>
+    public string? PasswordResetTokenHash { get; set; }
+
+    public DateTimeOffset? PasswordResetExpiresAt { get; set; }
+
     [JsonIgnore]
     public ICollection<Server> Servers { get; set; } = new List<Server>();
 

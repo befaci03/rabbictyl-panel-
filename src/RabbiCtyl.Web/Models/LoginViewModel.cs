@@ -15,4 +15,7 @@ public sealed class LoginViewModel
 
     [Display(Name = "Remember me")]
     public bool RememberMe { get; set; }
+
+    /// <summary>Challenge token filled in by the Turnstile/hCaptcha widget.</summary>
+    public string? CaptchaToken { get; set; }
 }

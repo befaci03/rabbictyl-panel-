@@ -103,7 +103,7 @@
                                 </span>
                             </td>
                             <td>@user.Username</td>
-                            <td>@user.Email</td>
+                            <td><span class="email-mask" tabindex="0" title="@L["account.revealEmail"]">@user.Email</span></td>
                             <td>
                                 @if (user.IsRootAdmin)
                                 {

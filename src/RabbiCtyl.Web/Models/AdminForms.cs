@@ -55,6 +55,9 @@ public sealed class CreateServerForm
     [Required]
     public Guid OwnerId { get; set; }
 
+    /// <summary>Optional game template; when set its defaults replace the manual startup fields.</summary>
+    public Guid? EggUuid { get; set; }
+
     [Required, StringLength(64, MinimumLength = 1)]
     public string Name { get; set; } = string.Empty;
 
@@ -76,11 +79,50 @@ public sealed class CreateServerForm
     [Range(0, 10_000)]
     public int CpuLimitPercent { get; set; } = 100;
 
+    [StringLength(1024)]
+    public string Startup { get; set; } = "java -Xms128M -Xmx1024M -jar server.jar";
+
+    [StringLength(255)]
+    public string Image { get; set; } = "ghcr.io/pterodactyl/yolks:java_21";
+}
+
+public sealed class CreateGameTemplateForm
+{
+    [Required, StringLength(191, MinimumLength = 1)]
+    public string Name { get; set; } = string.Empty;
+
+    [StringLength(1024)]
+    public string? Description { get; set; }
+
+    [StringLength(191)]
+    public string Author { get; set; } = string.Empty;
+
     [Required, StringLength(1024, MinimumLength = 1)]
     public string Startup { get; set; } = "java -Xms128M -Xmx1024M -jar server.jar";
 
     [Required, StringLength(255, MinimumLength = 1)]
     public string Image { get; set; } = "ghcr.io/pterodactyl/yolks:java_21";
+
+    [StringLength(255)]
+    public string ScriptContainer { get; set; } = "alpine:3.20";
+
+    [StringLength(255)]
+    public string ScriptEntrypoint { get; set; } = "ash";
+
+    /// <summary>Install script body, run once after the container is created.</summary>
+    public string? InstallScript { get; set; }
+
+    /// <summary>One <c>ENV=default</c> pair per line.</summary>
+    public string? Variables { get; set; }
+
+    /// <summary>Startup detection patterns, one per line.</summary>
+    public string? DonePatterns { get; set; }
+
+    [StringLength(16)]
+    public string StopType { get; set; } = "command";
+
+    [StringLength(64)]
+    public string StopValue { get; set; } = "stop";
 }
 
 public sealed class CreateUserForm

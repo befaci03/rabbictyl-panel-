@@ -77,12 +77,49 @@ public static class TomlConfigLoader
             throw new ConfigurationException("security.bcrypt_work_factor must be between 4 and 31.");
         }
 
+        var captcha = options.Security.Captcha.ResolveProvider();
+
+        if (captcha != Options.CaptchaOptions.None
+            && (string.IsNullOrWhiteSpace(options.Security.Captcha.SiteKey)
+                || string.IsNullOrWhiteSpace(options.Security.Captcha.SecretKey)))
+        {
+            throw new ConfigurationException(
+                $"security.captcha.{captcha} requires both site_key and secret_key.");
+        }
+
         if (string.IsNullOrWhiteSpace(options.App.Name))
         {
             throw new ConfigurationException("app.name must not be empty.");
         }
 
+        ValidateMail(options.Mail);
+
         _ = options.Database.ResolveProvider();
+    }
+
+    private static void ValidateMail(Options.MailOptions mail)
+    {
+        if (!mail.Enabled)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(mail.Host))
+        {
+            throw new ConfigurationException("mail.host is required when mail.enabled is true.");
+        }
+
+        if (string.IsNullOrWhiteSpace(mail.FromAddress))
+        {
+            throw new ConfigurationException("mail.from_address is required when mail.enabled is true.");
+        }
+
+        if (mail.Port is < 1 or > 65535)
+        {
+            throw new ConfigurationException("mail.port must be between 1 and 65535.");
+        }
+
+        _ = mail.ResolveEncryption();
     }
 
     private static string FormatSource(string? sourceName) =>

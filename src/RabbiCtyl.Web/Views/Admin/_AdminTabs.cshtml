@@ -9,6 +9,10 @@
        asp-controller="Admin" asp-action="Servers">@L["admin.servers"]</a>
     <a class="tab @(current == "Users" ? "is-active" : string.Empty)"
        asp-controller="Admin" asp-action="Users">@L["admin.users"]</a>
+    <a class="tab @(current == "Games" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Games">@L["admin.games"]</a>
+    <a class="tab @(current == "OAuth2" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="OAuth2">@L["admin.oauth2"]</a>
     <a class="tab @(current == "Addons" ? "is-active" : string.Empty)"
        asp-controller="Admin" asp-action="Addons">@L["admin.addons"]</a>
 </nav>

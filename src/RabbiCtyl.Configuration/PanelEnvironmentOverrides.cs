@@ -38,12 +38,27 @@ public static class PanelEnvironmentOverrides
         Set(read("RABBICTYL_SECURITY_BCRYPT_WORK_FACTOR"),
             value => options.Security.BcryptWorkFactor = ParseInt(value));
         Set(read("RABBICTYL_SECURITY_REQUIRE_HTTPS"), value => options.Security.RequireHttps = ParseBool(value));
+        Set(read("RABBICTYL_SECURITY_ALLOW_REGISTRATION"), value => options.Security.AllowRegistration = ParseBool(value));
+
+        Set(read("RABBICTYL_SECURITY_CAPTCHA_PROVIDER"), value => options.Security.Captcha.Provider = value);
+        Set(read("RABBICTYL_SECURITY_CAPTCHA_SITE_KEY"), value => options.Security.Captcha.SiteKey = value);
+        Set(read("RABBICTYL_SECURITY_CAPTCHA_SECRET_KEY"), value => options.Security.Captcha.SecretKey = value);
 
         Set(read("RABBICTYL_LOGGING_LEVEL"), value => options.Logging.Level = value);
+
+        Set(read("RABBICTYL_MAIL_ENABLED"), value => options.Mail.Enabled = ParseBool(value));
+        Set(read("RABBICTYL_MAIL_HOST"), value => options.Mail.Host = value);
+        Set(read("RABBICTYL_MAIL_PORT"), value => options.Mail.Port = ParseInt(value));
+        Set(read("RABBICTYL_MAIL_ENCRYPTION"), value => options.Mail.Encryption = value);
+        Set(read("RABBICTYL_MAIL_USERNAME"), value => options.Mail.Username = value);
+        Set(read("RABBICTYL_MAIL_PASSWORD"), value => options.Mail.Password = value);
+        Set(read("RABBICTYL_MAIL_FROM_ADDRESS"), value => options.Mail.FromAddress = value);
+        Set(read("RABBICTYL_MAIL_FROM_NAME"), value => options.Mail.FromName = value);
 
         Set(read("RABBICTYL_THEMES_DIRECTORY"), value => options.Themes.Directory = value);
         Set(read("RABBICTYL_THEMES_ACTIVE"), value => options.Themes.Active = value);
         Set(read("RABBICTYL_ADDONS_DIRECTORY"), value => options.Addons.Directory = value);
+        Set(read("RABBICTYL_NESTS_DIRECTORY"), value => options.Nests.Directory = value);
         Set(read("RABBICTYL_STORAGE_DIRECTORY"), value => options.Storage.Directory = value);
 
         Set(read("RABBICTYL_BOOTSTRAP_ADMIN_EMAIL"), value => options.Bootstrap.AdminEmail = value);
