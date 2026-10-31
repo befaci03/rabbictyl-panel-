@@ -56,7 +56,7 @@ public sealed class FileSystemNestCatalog : INestCatalog
                     ? Path.GetFileNameWithoutExtension(file)
                     : model.Id.Trim();
 
-                nests.Add(ToDescriptor(id, model));
+                nests.Add(ToDescriptor(id, model, Path.GetFileName(file)));
             }
             catch (Exception exception) when (exception is TomlException or IOException or UnauthorizedAccessException)
             {
@@ -67,7 +67,7 @@ public sealed class FileSystemNestCatalog : INestCatalog
         return nests;
     }
 
-    private static NestDescriptor ToDescriptor(string id, NestFile model)
+    private NestDescriptor ToDescriptor(string id, NestFile model, string fileName)
     {
         var name = string.IsNullOrWhiteSpace(model.Name) ? id : model.Name.Trim();
         var author = model.Author?.Trim() ?? string.Empty;
@@ -83,6 +83,20 @@ public sealed class FileSystemNestCatalog : INestCatalog
 
             var eggId = eggFile.Id.Trim();
 
+            // default_docker_img and docker_images are both required: an egg
+            // without them cannot start a container, so it is skipped loudly
+            // instead of silently producing a broken template.
+            if (string.IsNullOrWhiteSpace(eggFile.DefaultDockerImg) || eggFile.DockerImages is not { Count: > 0 })
+            {
+                _logger.LogWarning(
+                    "Skipping nest egg {Nest}/{Egg} in {File}: default_docker_img and docker_images are required.",
+                    id,
+                    eggId,
+                    fileName);
+
+                continue;
+            }
+
             eggs.Add(new Egg
             {
                 Id = DeterministicGuid($"nest:{id}:{eggId}"),
@@ -90,7 +104,7 @@ public sealed class FileSystemNestCatalog : INestCatalog
                 Name = string.IsNullOrWhiteSpace(eggFile.Name) ? eggId : eggFile.Name.Trim(),
                 Description = eggFile.Description,
                 Author = author,
-                DockerImage = eggFile.DockerImage ?? string.Empty,
+                DockerImage = eggFile.DefaultDockerImg.Trim(),
                 DockerImagesJson = JsonSerializer.Serialize(BuildImages(eggFile), JsonOptions),
                 StartupCommand = eggFile.Startup.Trim(),
                 ProcessConfigurationJson = EggTemplate.BuildProcessConfiguration(
@@ -113,12 +127,17 @@ public sealed class FileSystemNestCatalog : INestCatalog
 
     /// <summary>
     /// Builds the named image map from <c>docker_images</c>, where each entry is
-    /// <c>image||Display name</c>. The plain <c>docker_image</c> stays the
-    /// default unless the same image is already listed under a name.
+    /// <c>image||Display name</c>. <c>default_docker_img</c> is always the first
+    /// entry under the <c>default</c> name, so the map's first value is the image
+    /// a server gets unless one of the other choices is picked.
     /// </summary>
     private static Dictionary<string, string> BuildImages(NestEggFile eggFile)
     {
-        var pairs = new List<KeyValuePair<string, string>>();
+        var primary = eggFile.DefaultDockerImg!.Trim();
+        var images = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["default"] = primary,
+        };
 
         foreach (var entry in eggFile.DockerImages ?? [])
         {
@@ -131,7 +150,7 @@ public sealed class FileSystemNestCatalog : INestCatalog
             var image = (separator >= 0 ? entry[..separator] : entry).Trim();
             var name = separator >= 0 ? entry[(separator + 2)..].Trim() : string.Empty;
 
-            if (image.Length == 0)
+            if (image.Length == 0 || string.Equals(image, primary, StringComparison.Ordinal))
             {
                 continue;
             }
@@ -141,31 +160,12 @@ public sealed class FileSystemNestCatalog : INestCatalog
                 name = image;
             }
 
-            if (pairs.Any(pair => string.Equals(pair.Key, name, StringComparison.Ordinal)))
+            if (images.ContainsKey(name) || images.ContainsValue(image))
             {
                 continue;
             }
 
-            pairs.Add(new KeyValuePair<string, string>(name, image));
-        }
-
-        var primary = eggFile.DockerImage?.Trim() ?? string.Empty;
-
-        if (primary.Length > 0 && !pairs.Any(pair => string.Equals(pair.Value, primary, StringComparison.Ordinal)))
-        {
-            pairs.Insert(0, new KeyValuePair<string, string>("default", primary));
-        }
-
-        var images = new Dictionary<string, string>(StringComparer.Ordinal);
-
-        foreach (var pair in pairs)
-        {
-            images[pair.Key] = pair.Value;
-        }
-
-        if (images.Count == 0)
-        {
-            images["default"] = primary;
+            images[name] = image;
         }
 
         return images;
@@ -202,9 +202,10 @@ public sealed class FileSystemNestCatalog : INestCatalog
 
         public string? Description { get; set; }
 
-        public string? DockerImage { get; set; }
+        /// <summary>Required. The image a server gets unless another is picked.</summary>
+        public string? DefaultDockerImg { get; set; }
 
-        /// <summary>Named images as <c>image||Display name</c> entries.</summary>
+        /// <summary>Required. Named images as <c>image||Display name</c> entries.</summary>
         public List<string>? DockerImages { get; set; }
 
         public string? Startup { get; set; }

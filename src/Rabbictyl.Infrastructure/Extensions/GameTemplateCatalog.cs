@@ -43,7 +43,8 @@ public sealed class GameTemplateCatalog : IGameTemplateCatalog
                     nest.Id,
                     nest.Name,
                     FromNest: true,
-                    EditedAt: storedCopy?.UpdatedAt));
+                    EditedAt: storedCopy?.UpdatedAt,
+                    NestVersion: nest.Version));
             }
         }
 
@@ -77,7 +78,8 @@ public sealed class GameTemplateCatalog : IGameTemplateCatalog
                     nest.Id,
                     nest.Name,
                     FromNest: true,
-                    EditedAt: stored?.UpdatedAt);
+                    EditedAt: stored?.UpdatedAt,
+                    NestVersion: nest.Version);
             }
         }
 

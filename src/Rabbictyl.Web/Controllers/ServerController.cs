@@ -2,6 +2,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Rabbictyl.Core.Abstractions;
+using Rabbictyl.Core.Entities;
+using Rabbictyl.Core.Extensions;
 using Rabbictyl.Infrastructure.Pats;
 using Rabbictyl.Web.Models;
 using Rabbictyl.Web.Security;
@@ -18,6 +20,7 @@ public sealed class ServerController : Controller
     private readonly IServerStore _servers;
     private readonly INodeStore _nodes;
     private readonly IUserStore _users;
+    private readonly IGameTemplateCatalog _templates;
     private readonly IPatsClientFactory _pats;
     private readonly ILogger<ServerController> _logger;
 
@@ -25,12 +28,14 @@ public sealed class ServerController : Controller
         IServerStore servers,
         INodeStore nodes,
         IUserStore users,
+        IGameTemplateCatalog templates,
         IPatsClientFactory pats,
         ILogger<ServerController> logger)
     {
         _servers = servers;
         _nodes = nodes;
         _users = users;
+        _templates = templates;
         _pats = pats;
         _logger = logger;
     }
@@ -119,7 +124,36 @@ public sealed class ServerController : Controller
             DaemonError = daemonError,
             Environment = ParseEnvironment(server.EnvironmentJson),
             AccessRestricted = restricted,
+            Images = await ResolveImagesAsync(server, cancellationToken),
         });
+    }
+
+    /// <summary>
+    /// Docker images the Startup tab may offer. Only administrators can switch
+    /// them, and only eggs that actually declare more than one are worth a picker.
+    /// </summary>
+    private async Task<IReadOnlyList<KeyValuePair<string, string>>> ResolveImagesAsync(
+        Server server,
+        CancellationToken cancellationToken)
+    {
+        if (!User.IsInRole("admin") || !Guid.TryParse(server.EggUuid, out var eggUuid))
+        {
+            return [];
+        }
+
+        // Nest eggs live in TOML files, panel eggs in the database; the catalog
+        // resolves both, so an egg that was never copied into the panel still
+        // offers its images.
+        var template = await _templates.FindAsync(eggUuid, cancellationToken);
+
+        if (template is null)
+        {
+            return [];
+        }
+
+        var choices = EggTemplate.ImageChoices(template.Egg);
+
+        return choices.Count > 1 ? choices : Array.Empty<KeyValuePair<string, string>>();
     }
 
     private static Dictionary<string, string> ParseEnvironment(string json)

@@ -69,6 +69,101 @@ public static class EggTemplate
         ?? egg.DockerImage;
 
     /// <summary>
+    /// The named images offered when a server is created, default first and then
+    /// the rest in stored order. Used by the admin list and the egg editor.
+    /// </summary>
+    public static IReadOnlyList<KeyValuePair<string, string>> ImageChoices(Egg egg)
+    {
+        var primary = Image(egg);
+        var choices = new List<KeyValuePair<string, string>>
+        {
+            new("default", primary),
+        };
+
+        foreach (var pair in Images(egg))
+        {
+            if (string.Equals(pair.Key, "default", StringComparison.Ordinal)
+                || string.Equals(pair.Value, primary, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            choices.Add(pair);
+        }
+
+        return choices;
+    }
+
+    /// <summary>Startup detection patterns stored in the egg's process configuration.</summary>
+    public static IReadOnlyList<string> DonePatterns(Egg egg)
+    {
+        using var document = TryParse(egg.ProcessConfigurationJson);
+
+        if (document is null
+            || document.RootElement.ValueKind != JsonValueKind.Object
+            || !document.RootElement.TryGetProperty("startup", out var startup)
+            || startup.ValueKind != JsonValueKind.Object
+            || !startup.TryGetProperty("done", out var done)
+            || done.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        return done.EnumerateArray()
+            .Where(item => item.ValueKind == JsonValueKind.String)
+            .Select(item => item.GetString() ?? string.Empty)
+            .Where(item => item.Length > 0)
+            .ToList();
+    }
+
+    /// <summary><c>stop.type</c> from the process configuration, e.g. <c>command</c> or <c>signal</c>.</summary>
+    public static string StopType(Egg egg) => StopField(egg, "type") ?? "command";
+
+    /// <summary><c>stop.value</c> from the process configuration, e.g. <c>stop</c> or <c>SIGTERM</c>.</summary>
+    public static string StopValue(Egg egg) => StopField(egg, "value") ?? "stop";
+
+    /// <summary>One <c>ENV=default</c> line per variable, for the egg editor.</summary>
+    public static string VariableLines(Egg egg) => string.Join(
+        '\n',
+        Variables(egg)
+            .Where(variable => !string.IsNullOrWhiteSpace(variable.EnvVariable))
+            .Select(variable => $"{variable.EnvVariable}={variable.DefaultValue}"));
+
+    private static string? StopField(Egg egg, string property)
+    {
+        using var document = TryParse(egg.ProcessConfigurationJson);
+
+        if (document is not null
+            && document.RootElement.ValueKind == JsonValueKind.Object
+            && document.RootElement.TryGetProperty("stop", out var stop)
+            && stop.ValueKind == JsonValueKind.Object
+            && stop.TryGetProperty(property, out var value)
+            && value.ValueKind == JsonValueKind.String)
+        {
+            return value.GetString();
+        }
+
+        return null;
+    }
+
+    private static JsonDocument? TryParse(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonDocument.Parse(json);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Copies an egg so a nest template can be edited in the panel. The UUID is
     /// preserved so servers keep pointing at the same template; the TOML file is
     /// never rewritten.

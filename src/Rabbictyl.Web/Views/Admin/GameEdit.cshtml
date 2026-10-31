@@ -1,0 +1,62 @@
+@model AdminGameEditViewModel
+@{
+    ViewData["Title"] = (Model.Create ? L["admin.games.create"] : Model.Name).ToString();
+}
+
+<section class="page">
+    <header class="page__header">
+        <div>
+            <span class="eyebrow">@L["admin.eyebrow"]</span>
+            <h1 class="page__title">@(Model.Create ? L["admin.games.create"] : Model.Name)</h1>
+            <p class="page__subtitle">
+                @if (Model.Create)
+                {
+                    @L["admin.games.createHint"]
+                }
+                else if (Model.FromNest)
+                {
+                    @L["admin.games.fromNest"] <code>@Model.NestName</code>
+                    @if (!string.IsNullOrWhiteSpace(Model.NestVersion))
+                    {
+                        <span>· v@(Model.NestVersion)</span>
+                    }
+                }
+                else
+                {
+                    @L["admin.games.panelGroup"]
+                }
+            </p>
+        </div>
+        <a class="button button--ghost" asp-controller="Admin" asp-action="Games">@L["admin.games.back"]</a>
+    </header>
+
+    <partial name="_AdminTabs" />
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert--success" role="status">@success</div>
+    }
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert--danger" role="alert">@error</div>
+    }
+
+    @if (Model.FromNest)
+    {
+        <div class="alert alert--warning" role="status">@L["admin.games.nestEditWarning"]</div>
+    }
+
+    @if (Model.Create)
+    {
+        <form method="post" asp-controller="Admin" asp-action="CreateGame" class="form card">
+            <partial name="_GameEditFields" model="Model" />
+        </form>
+    }
+    else
+    {
+        <form method="post" asp-controller="Admin" asp-action="UpdateGame" asp-route-uuid="@Model.Uuid" class="form card">
+            <partial name="_GameEditFields" model="Model" />
+        </form>
+    }
+</section>

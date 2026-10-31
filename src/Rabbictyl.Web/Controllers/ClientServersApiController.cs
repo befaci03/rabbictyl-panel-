@@ -575,6 +575,51 @@ public sealed class ClientServersApiController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Administrators switch the container image of a server whose egg offers
+    /// several, for example the Java 21 to Java 25 choices of the Paper nest.
+    /// The daemon picks the new image up on the next sync.
+    /// </summary>
+    [HttpPut("{uuid}/startup/image")]
+    public async Task<IActionResult> UpdateImage(
+        string uuid,
+        [FromBody] ImageRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!IsAdmin)
+        {
+            return Forbid();
+        }
+
+        var (server, node) = await ResolveAsync(uuid, cancellationToken);
+
+        if (server is null || node is null)
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Image))
+        {
+            return ValidationProblem("An image is required.");
+        }
+
+        server.Image = request.Image.Trim();
+        server.DaemonConfigurationJson = null;
+        await _servers.UpdateAsync(server, cancellationToken);
+
+        try
+        {
+            await _pats.Create(node).SyncAsync(server.Uuid, cancellationToken);
+        }
+        catch (Exception exception) when (exception is PatsApiException or HttpRequestException or TaskCanceledException)
+        {
+            // The panel keeps the new image; the daemon picks it up on the next sync.
+            _logger.LogWarning(exception, "Could not sync the new image for server {Server}.", server.Uuid);
+        }
+
+        return Ok(new { image = server.Image });
+    }
+
     [HttpGet("{uuid}/network/allocations")]
     public async Task<IActionResult> Allocations(string uuid, CancellationToken cancellationToken)
     {
@@ -743,5 +788,10 @@ public sealed class ClientServersApiController : ControllerBase
     {
         public string Key { get; set; } = string.Empty;
         public string Value { get; set; } = string.Empty;
+    }
+
+    public sealed class ImageRequest
+    {
+        public string Image { get; set; } = string.Empty;
     }
 }

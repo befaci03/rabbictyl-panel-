@@ -1,0 +1,126 @@
+@model AdminGameEditViewModel
+
+<div class="admin-create__grid">
+    <div class="form__group">
+        <label class="form__label" for="game-name">@L["admin.games.name"]</label>
+        <input class="form__input" id="game-name" name="Name" value="@Model.Name" required maxlength="191" placeholder="Minecraft Paper" />
+    </div>
+    <div class="form__group">
+        <label class="form__label" for="game-author">@L["admin.games.author"]</label>
+        <input class="form__input" id="game-author" name="Author" value="@Model.Author" maxlength="191" placeholder="Rabbict_yl" />
+    </div>
+    <div class="form__group">
+        <label class="form__label" for="game-description">@L["admin.games.description"]</label>
+        <input class="form__input" id="game-description" name="Description" value="@Model.Description" maxlength="1024" />
+    </div>
+</div>
+
+<section class="form__group">
+    <span class="form__label">@L["admin.games.images"]</span>
+    <div class="form__group">
+        <label class="form__label" for="game-image">@L["admin.games.defaultImage"]</label>
+        <input class="form__input" id="game-image" name="Image" value="@Model.Image" required maxlength="255" spellcheck="false" placeholder="ghcr.io/pterodactyl/yolks:java_21" />
+    </div>
+
+    <div class="image-rows" id="game-image-rows">
+        @foreach (var image in Model.ExtraImages)
+        {
+            <div class="image-row">
+                <input class="form__input" type="text" name="ImageNames" value="@image.Key" maxlength="191" placeholder="@L["admin.games.imageName"]" aria-label="@L["admin.games.imageName"]" />
+                <input class="form__input" type="text" name="Images" value="@image.Value" maxlength="255" spellcheck="false" placeholder="registry/image:tag" aria-label="@L["admin.games.images"]" />
+                <button type="button" class="button button--ghost button--sm image-row__remove" aria-label="@L["admin.games.removeImage"]">×</button>
+            </div>
+        }
+    </div>
+
+    <template id="game-image-row-template">
+        <div class="image-row">
+            <input class="form__input" type="text" name="ImageNames" maxlength="191" placeholder="@L["admin.games.imageName"]" aria-label="@L["admin.games.imageName"]" />
+            <input class="form__input" type="text" name="Images" maxlength="255" spellcheck="false" placeholder="registry/image:tag" aria-label="@L["admin.games.images"]" />
+            <button type="button" class="button button--ghost button--sm image-row__remove" aria-label="@L["admin.games.removeImage"]">×</button>
+        </div>
+    </template>
+
+    <div class="admin-create__actions">
+        <button type="button" class="button button--ghost button--sm" id="game-image-add">@L["admin.games.addImage"]</button>
+    </div>
+    <span class="form__hint">@L["admin.games.imagesHint"]</span>
+</section>
+
+<div class="form__group">
+    <label class="form__label" for="game-startup">@L["server.startup.command"]</label>
+    <input class="form__input" id="game-startup" name="Startup" value="@Model.Startup" required maxlength="1024" spellcheck="false" />
+</div>
+
+<div class="admin-create__grid">
+    <div class="form__group">
+        <label class="form__label" for="game-done">@L["admin.games.done"]</label>
+        <textarea class="form__input" id="game-done" name="DonePatterns" rows="3" spellcheck="false" placeholder="regex:.*Done.*">@string.Join('\n', Model.DonePatterns)</textarea>
+        <span class="form__hint">@L["admin.games.doneHint"]</span>
+    </div>
+    <div class="form__group">
+        <label class="form__label" for="game-stop-type">@L["admin.games.stopType"]</label>
+        <select class="form__input" id="game-stop-type" name="StopType">
+            <option value="command" selected="@(Model.StopType == "command")">command</option>
+            <option value="signal" selected="@(Model.StopType == "signal")">signal</option>
+        </select>
+    </div>
+    <div class="form__group">
+        <label class="form__label" for="game-stop-value">@L["admin.games.stop"]</label>
+        <input class="form__input" id="game-stop-value" name="StopValue" value="@Model.StopValue" maxlength="64" spellcheck="false" />
+    </div>
+</div>
+
+<div class="admin-create__grid">
+    <div class="form__group">
+        <label class="form__label" for="game-script-container">@L["admin.games.scriptContainer"]</label>
+        <input class="form__input" id="game-script-container" name="ScriptContainer" value="@Model.ScriptContainer" maxlength="255" spellcheck="false" />
+    </div>
+    <div class="form__group">
+        <label class="form__label" for="game-script-entrypoint">@L["admin.games.scriptEntrypoint"]</label>
+        <input class="form__input" id="game-script-entrypoint" name="ScriptEntrypoint" value="@Model.ScriptEntrypoint" maxlength="255" spellcheck="false" />
+    </div>
+</div>
+
+<div class="form__group">
+    <label class="form__label" for="game-variables">@L["admin.games.variables"]</label>
+    <textarea class="form__input" id="game-variables" name="Variables" rows="4" spellcheck="false" placeholder="SERVER_JARFILE=server.jar&#10;MC_VERSION=26.3">@Model.Variables</textarea>
+    <span class="form__hint">@L["admin.games.variablesHint"]</span>
+</div>
+
+<div class="form__group">
+    <label class="form__label" for="game-install">@L["admin.games.installScript"]</label>
+    <textarea class="form__input" id="game-install" name="InstallScript" rows="10" spellcheck="false" placeholder="#!/bin/ash&#10;apk add --no-cache curl">@Model.InstallScript</textarea>
+    <span class="form__hint">@L["admin.games.installScriptHint"]</span>
+</div>
+
+<div class="admin-create__actions">
+    <button type="submit" class="button button--primary">@L["admin.games.save"]</button>
+</div>
+
+<script>
+    (() => {
+        "use strict";
+
+        const rows = document.getElementById("game-image-rows");
+        const template = document.getElementById("game-image-row-template");
+        const add = document.getElementById("game-image-add");
+
+        if (!rows || !template || !add) {
+            return;
+        }
+
+        add.addEventListener("click", () => {
+            const row = template.content.firstElementChild.cloneNode(true);
+            rows.append(row);
+            row.querySelector('input[name="ImageNames"]')?.focus();
+        });
+
+        rows.addEventListener("click", (event) => {
+            const button = event.target.closest(".image-row__remove");
+            if (button) {
+                button.closest(".image-row")?.remove();
+            }
+        });
+    })();
+</script>

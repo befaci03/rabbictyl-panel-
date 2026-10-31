@@ -11,7 +11,10 @@ description = "Self-hosted Git services"
 id = "gitea"
 name = "Gitea"
 description = "Gitea with SQLite storage under /home/container/gitea. Point GITEA_ROOT_URL at your domain once DNS is set up."
-docker_image = "gitea/gitea:latest"
+default_docker_img = "gitea/gitea:latest"
+docker_images = [
+    "gitea/gitea:latest||Gitea",
+]
 startup = "sh /home/container/start.sh {{SERVER_PORT}} {{GITEA_ROOT_URL}}"
 script_container = "alpine:3.20"
 script_entrypoint = "ash"

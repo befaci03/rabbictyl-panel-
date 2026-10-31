@@ -54,7 +54,12 @@ public sealed class EfServerStore : IServerStore
     public async Task UpdateAsync(Server server, CancellationToken cancellationToken = default)
     {
         server.UpdatedAt = DateTimeOffset.UtcNow;
-        _db.Servers.Update(server);
+
+        // Query() loads the owner, node and egg without tracking. Marking only
+        // the server row keeps Update() from attaching that graph, which would
+        // clash with entities another store already tracks in the same request
+        // (for example the node loaded by the controller).
+        _db.Entry(server).State = EntityState.Modified;
         await _db.SaveChangesAsync(cancellationToken);
     }
 

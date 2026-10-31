@@ -127,6 +127,12 @@ public sealed class CreateGameTemplateForm
 
     [StringLength(64)]
     public string StopValue { get; set; } = "stop";
+
+    /// <summary>Extra image rows, one image reference per row, zipped with <see cref="ImageNames"/>.</summary>
+    public List<string>? Images { get; set; }
+
+    /// <summary>Display names for <see cref="Images"/>, in the same row order.</summary>
+    public List<string>? ImageNames { get; set; }
 }
 
 public sealed class UpdateGameTemplateForm
@@ -154,6 +160,27 @@ public sealed class UpdateGameTemplateForm
 
     /// <summary>Display names for <see cref="Images"/>, in the same row order.</summary>
     public List<string>? ImageNames { get; set; }
+
+    [StringLength(255)]
+    public string ScriptContainer { get; set; } = "ghcr.io/pterodactyl/installers:alpine";
+
+    [StringLength(255)]
+    public string ScriptEntrypoint { get; set; } = "ash";
+
+    /// <summary>Install script body; an empty value removes the install script.</summary>
+    public string? InstallScript { get; set; }
+
+    /// <summary>One <c>ENV=default</c> pair per line; blank lines and bad rows are skipped.</summary>
+    public string? Variables { get; set; }
+
+    /// <summary>Startup detection patterns, one per line.</summary>
+    public string? DonePatterns { get; set; }
+
+    [StringLength(16)]
+    public string StopType { get; set; } = "command";
+
+    [StringLength(64)]
+    public string StopValue { get; set; } = "stop";
 }
 
 public sealed class CreateUserForm

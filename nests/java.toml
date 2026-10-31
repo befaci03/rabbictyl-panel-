@@ -1,6 +1,6 @@
 version = "1.00"
-# Generic Java runtime. One egg per Java release; pick the egg that matches the
-# runtime your jar needs. Latest release: Java 27.
+# Generic Java runtime: one egg with every release from 8 to 27 as a docker
+# image. Pick the image that matches the jar at server creation.
 
 id = "java"
 name = "Java"
@@ -8,200 +8,32 @@ author = "Rabbictyl"
 description = "Java applications and game servers"
 
 [[egg]]
-id = "java_8"
-name = "Java 8"
-description = "Runs a jar with Java 8 (1.8)."
-docker_image = "ghcr.io/pterodactyl/yolks:java_8"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_9"
-name = "Java 9"
-description = "Runs a jar with Java 9."
-docker_image = "ghcr.io/pterodactyl/yolks:java_9"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_10"
-name = "Java 10"
-description = "Runs a jar with Java 10."
-docker_image = "ghcr.io/pterodactyl/yolks:java_10"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_11"
-name = "Java 11"
-description = "Runs a jar with Java 11 (LTS)."
-docker_image = "ghcr.io/pterodactyl/yolks:java_11"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_12"
-name = "Java 12"
-description = "Runs a jar with Java 12."
-docker_image = "ghcr.io/pterodactyl/yolks:java_12"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_13"
-name = "Java 13"
-description = "Runs a jar with Java 13."
-docker_image = "ghcr.io/pterodactyl/yolks:java_13"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_14"
-name = "Java 14"
-description = "Runs a jar with Java 14."
-docker_image = "ghcr.io/pterodactyl/yolks:java_14"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_15"
-name = "Java 15"
-description = "Runs a jar with Java 15."
-docker_image = "ghcr.io/pterodactyl/yolks:java_15"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_16"
-name = "Java 16"
-description = "Runs a jar with Java 16."
-docker_image = "ghcr.io/pterodactyl/yolks:java_16"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_17"
-name = "Java 17"
-description = "Runs a jar with Java 17 (LTS)."
-docker_image = "ghcr.io/pterodactyl/yolks:java_17"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_18"
-name = "Java 18"
-description = "Runs a jar with Java 18."
-docker_image = "ghcr.io/pterodactyl/yolks:java_18"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_19"
-name = "Java 19"
-description = "Runs a jar with Java 19."
-docker_image = "ghcr.io/pterodactyl/yolks:java_19"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_20"
-name = "Java 20"
-description = "Runs a jar with Java 20."
-docker_image = "ghcr.io/pterodactyl/yolks:java_20"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_21"
-name = "Java 21"
-description = "Runs a jar with Java 21 (LTS)."
-docker_image = "ghcr.io/pterodactyl/yolks:java_21"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_22"
-name = "Java 22"
-description = "Runs a jar with Java 22."
-docker_image = "ghcr.io/pterodactyl/yolks:java_22"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_23"
-name = "Java 23"
-description = "Runs a jar with Java 23."
-docker_image = "ghcr.io/pterodactyl/yolks:java_23"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_24"
-name = "Java 24"
-description = "Runs a jar with Java 24."
-docker_image = "ghcr.io/pterodactyl/yolks:java_24"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_25"
-name = "Java 25"
-description = "Runs a jar with Java 25 (LTS)."
-docker_image = "ghcr.io/pterodactyl/yolks:java_25"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_26"
-name = "Java 26"
-description = "Runs a jar with Java 26."
-docker_image = "ghcr.io/pterodactyl/yolks:java_26"
-startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
-
-[egg.variables]
-SERVER_JARFILE = "server.jar"
-
-[[egg]]
-id = "java_27"
-name = "Java 27"
-description = "Runs a jar with Java 27 (LTS)."
-docker_image = "ghcr.io/pterodactyl/yolks:java_27"
+id = "java"
+name = "Java"
+description = "Runs a jar with the Java release you pick as the docker image."
+default_docker_img = "ghcr.io/pterodactyl/yolks:java_21"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:java_8||Java 8",
+    "ghcr.io/pterodactyl/yolks:java_9||Java 9",
+    "ghcr.io/pterodactyl/yolks:java_10||Java 10",
+    "ghcr.io/pterodactyl/yolks:java_11||Java 11",
+    "ghcr.io/pterodactyl/yolks:java_12||Java 12",
+    "ghcr.io/pterodactyl/yolks:java_13||Java 13",
+    "ghcr.io/pterodactyl/yolks:java_14||Java 14",
+    "ghcr.io/pterodactyl/yolks:java_15||Java 15",
+    "ghcr.io/pterodactyl/yolks:java_16||Java 16",
+    "ghcr.io/pterodactyl/yolks:java_17||Java 17",
+    "ghcr.io/pterodactyl/yolks:java_18||Java 18",
+    "ghcr.io/pterodactyl/yolks:java_19||Java 19",
+    "ghcr.io/pterodactyl/yolks:java_20||Java 20",
+    "ghcr.io/pterodactyl/yolks:java_21||Java 21",
+    "ghcr.io/pterodactyl/yolks:java_22||Java 22",
+    "ghcr.io/pterodactyl/yolks:java_23||Java 23",
+    "ghcr.io/pterodactyl/yolks:java_24||Java 24",
+    "ghcr.io/pterodactyl/yolks:java_25||Java 25",
+    "ghcr.io/pterodactyl/yolks:java_26||Java 26",
+    "ghcr.io/pterodactyl/yolks:java_27||Java 27",
+]
 startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
 
 [egg.variables]

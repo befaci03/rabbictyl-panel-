@@ -7,21 +7,18 @@ description = "Go applications"
 [[egg]]
 id = "golang"
 name = "Go"
-description = "Builds a Go module during setup and runs the resulting binary (falls back to go run)."
-docker_image = "golang:1.27"
-startup = "sh -c 'if [ -x ./server ]; then exec ./server; elif [ -f go.mod ]; then exec go run .; else echo \"No Go code found - run the install script\" >&2; exit 1; fi'"
-script_container = "golang:1.27"
-script_entrypoint = "sh"
-script_install = """
-#!/bin/sh
-set -e
-if [ ! -f go.mod ]; then
-  printf 'package main\n\nimport "fmt"\n\nfunc main() {\n\tfmt.Println("Hello from Go")\n}\n' > main.go
-  go mod init server
-  echo "Created starter main.go"
-fi
-go build -o server .
-echo "Built ./server"
-"""
+description = "Runs a Go module with the toolchain you pick as the docker image. Upload your sources (or a prebuilt ./server) and it starts with go run."
+default_docker_img = "golang:1.27"
+docker_images = [
+    "golang:1.27||Go 1.27",
+    "golang:1.26||Go 1.26",
+    "golang:1.25||Go 1.25",
+    "golang:1.24||Go 1.24",
+    "golang:1.23||Go 1.23",
+    "golang:1.22||Go 1.22",
+    "golang:1.21||Go 1.21",
+    "golang:1.20||Go 1.20",
+]
+startup = "sh -c 'if [ -x ./server ]; then exec ./server; elif [ -f go.mod ]; then exec go run .; else echo \"No Go code found - upload your sources\" >&2; exit 1; fi'"
 
 [egg.variables]

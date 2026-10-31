@@ -104,14 +104,18 @@ ask an administrator, and nothing is sent.
 Nests are TOML files in `nests/`. Every `[[egg]]` entry becomes a game template:
 
 ```toml
-id = "minecraft"
-name = "Minecraft"
+id = "minecraft-java"
+name = "Minecraft: Java Edition"
 author = "Rabbict_yl"
 
 [[egg]]
-id = "java"
-name = "Minecraft Java"
-docker_image = "ghcr.io/pterodactyl/yolks:java_21"
+id = "paper"
+name = "Minecraft Paper"
+default_docker_img = "ghcr.io/pterodactyl/yolks:java_21"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:java_21||Java 21",
+    "ghcr.io/pterodactyl/yolks:java_22||Java 22",
+]
 startup = "java -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
 done = ['regex:.*Done .*']
 stop_value = "stop"
@@ -120,6 +124,15 @@ script_install = "..."
 [egg.variables]
 SERVER_JARFILE = "server.jar"
 ```
+
+`script_install` (with `script_container` and `script_entrypoint`) is optional: without it
+no install step runs and pats starts the server straight from its startup command.
+
+`default_docker_img` and `docker_images` are both required. The default is the image
+used unless another is picked; `docker_images` lists every image the egg accepts as
+`image||Display name`, so one egg can cover several runtimes (Java 8 to 27, .NET 7 to
+10, four Linux distros) instead of one egg per version. An egg missing either key is
+skipped with a warning in the log.
 
 `done` is the list of console patterns that mark a server as running. Leave the list
 empty and pats marks the server running as soon as it boots, skipping the busy state.

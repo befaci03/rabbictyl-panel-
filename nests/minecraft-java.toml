@@ -1,0 +1,403 @@
+version = "1.00"
+# Minecraft: Java Edition. One egg per server flavour; Java-based eggs offer
+# every Java release from 8 to 27 as a docker image, so one egg covers old and
+# new Minecraft versions.
+
+id = "minecraft-java"
+name = "Minecraft: Java Edition"
+author = "Rabbictyl"
+description = "Paper, Fabric, Forge and the other Java Edition server flavours."
+
+[[egg]]
+id = "paper"
+name = "Minecraft Paper"
+description = "Paper, the high performance Minecraft: Java Edition server."
+default_docker_img = "ghcr.io/pterodactyl/yolks:java_21"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:java_8||Java 8",
+    "ghcr.io/pterodactyl/yolks:java_9||Java 9",
+    "ghcr.io/pterodactyl/yolks:java_10||Java 10",
+    "ghcr.io/pterodactyl/yolks:java_11||Java 11",
+    "ghcr.io/pterodactyl/yolks:java_12||Java 12",
+    "ghcr.io/pterodactyl/yolks:java_13||Java 13",
+    "ghcr.io/pterodactyl/yolks:java_14||Java 14",
+    "ghcr.io/pterodactyl/yolks:java_15||Java 15",
+    "ghcr.io/pterodactyl/yolks:java_16||Java 16",
+    "ghcr.io/pterodactyl/yolks:java_17||Java 17",
+    "ghcr.io/pterodactyl/yolks:java_18||Java 18",
+    "ghcr.io/pterodactyl/yolks:java_19||Java 19",
+    "ghcr.io/pterodactyl/yolks:java_20||Java 20",
+    "ghcr.io/pterodactyl/yolks:java_21||Java 21",
+    "ghcr.io/pterodactyl/yolks:java_22||Java 22",
+    "ghcr.io/pterodactyl/yolks:java_23||Java 23",
+    "ghcr.io/pterodactyl/yolks:java_24||Java 24",
+    "ghcr.io/pterodactyl/yolks:java_25||Java 25",
+    "ghcr.io/pterodactyl/yolks:java_26||Java 26",
+    "ghcr.io/pterodactyl/yolks:java_27||Java 27",
+]
+startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
+done = ['regex:.*Done \(.*\)!']
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl
+curl -fsSL -o "${SERVER_JARFILE}" "https://api.papermc.io/v2/projects/paper/versions/${MC_VERSION}/builds/latest/downloads/paper-${MC_VERSION}-latest.jar"
+echo "Installed ${SERVER_JARFILE}"
+"""
+
+[egg.variables]
+SERVER_JARFILE = "server.jar"
+MC_VERSION = "26.3"
+
+[[egg]]
+id = "fabric"
+name = "Minecraft Fabric"
+description = "Fabric, the lightweight experimental mod loader for vanilla."
+default_docker_img = "ghcr.io/pterodactyl/yolks:java_21"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:java_8||Java 8",
+    "ghcr.io/pterodactyl/yolks:java_9||Java 9",
+    "ghcr.io/pterodactyl/yolks:java_10||Java 10",
+    "ghcr.io/pterodactyl/yolks:java_11||Java 11",
+    "ghcr.io/pterodactyl/yolks:java_12||Java 12",
+    "ghcr.io/pterodactyl/yolks:java_13||Java 13",
+    "ghcr.io/pterodactyl/yolks:java_14||Java 14",
+    "ghcr.io/pterodactyl/yolks:java_15||Java 15",
+    "ghcr.io/pterodactyl/yolks:java_16||Java 16",
+    "ghcr.io/pterodactyl/yolks:java_17||Java 17",
+    "ghcr.io/pterodactyl/yolks:java_18||Java 18",
+    "ghcr.io/pterodactyl/yolks:java_19||Java 19",
+    "ghcr.io/pterodactyl/yolks:java_20||Java 20",
+    "ghcr.io/pterodactyl/yolks:java_21||Java 21",
+    "ghcr.io/pterodactyl/yolks:java_22||Java 22",
+    "ghcr.io/pterodactyl/yolks:java_23||Java 23",
+    "ghcr.io/pterodactyl/yolks:java_24||Java 24",
+    "ghcr.io/pterodactyl/yolks:java_25||Java 25",
+    "ghcr.io/pterodactyl/yolks:java_26||Java 26",
+    "ghcr.io/pterodactyl/yolks:java_27||Java 27",
+]
+startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
+done = ['regex:.*Done \(.*\)!']
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl jq
+loader="${FABRIC_LOADER}"
+if [ -z "${loader}" ] || [ "${loader}" = "latest" ]; then
+  loader=$(curl -fsSL https://meta.fabricmc.net/v2/versions/loader | jq -r '.[0].version')
+fi
+curl -fsSL -o "${SERVER_JARFILE}" "https://meta.fabricmc.net/v2/versions/loader/${MC_VERSION}/${loader}/server/jar"
+echo "Installed Fabric ${loader} for ${MC_VERSION} as ${SERVER_JARFILE}"
+"""
+
+[egg.variables]
+SERVER_JARFILE = "server.jar"
+MC_VERSION = "26.3"
+FABRIC_LOADER = "latest"
+
+[[egg]]
+id = "folia"
+name = "Minecraft Folia"
+description = "Folia, the multithreaded Paper fork with regionised ticking."
+default_docker_img = "ghcr.io/pterodactyl/yolks:java_21"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:java_8||Java 8",
+    "ghcr.io/pterodactyl/yolks:java_9||Java 9",
+    "ghcr.io/pterodactyl/yolks:java_10||Java 10",
+    "ghcr.io/pterodactyl/yolks:java_11||Java 11",
+    "ghcr.io/pterodactyl/yolks:java_12||Java 12",
+    "ghcr.io/pterodactyl/yolks:java_13||Java 13",
+    "ghcr.io/pterodactyl/yolks:java_14||Java 14",
+    "ghcr.io/pterodactyl/yolks:java_15||Java 15",
+    "ghcr.io/pterodactyl/yolks:java_16||Java 16",
+    "ghcr.io/pterodactyl/yolks:java_17||Java 17",
+    "ghcr.io/pterodactyl/yolks:java_18||Java 18",
+    "ghcr.io/pterodactyl/yolks:java_19||Java 19",
+    "ghcr.io/pterodactyl/yolks:java_20||Java 20",
+    "ghcr.io/pterodactyl/yolks:java_21||Java 21",
+    "ghcr.io/pterodactyl/yolks:java_22||Java 22",
+    "ghcr.io/pterodactyl/yolks:java_23||Java 23",
+    "ghcr.io/pterodactyl/yolks:java_24||Java 24",
+    "ghcr.io/pterodactyl/yolks:java_25||Java 25",
+    "ghcr.io/pterodactyl/yolks:java_26||Java 26",
+    "ghcr.io/pterodactyl/yolks:java_27||Java 27",
+]
+startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
+done = ['regex:.*Done \(.*\)!']
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl
+curl -fsSL -o "${SERVER_JARFILE}" "https://api.papermc.io/v2/projects/folia/versions/${MC_VERSION}/builds/latest/downloads/folia-${MC_VERSION}-latest.jar"
+echo "Installed ${SERVER_JARFILE}"
+"""
+
+[egg.variables]
+SERVER_JARFILE = "server.jar"
+MC_VERSION = "26.3"
+
+[[egg]]
+id = "forge"
+name = "Minecraft Forge"
+description = "Forge, the classic Minecraft: Java Edition mod loader. The installer runs on first boot; FORGE_VERSION can be left empty to use the latest build for MC_VERSION."
+default_docker_img = "ghcr.io/pterodactyl/yolks:java_21"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:java_8||Java 8",
+    "ghcr.io/pterodactyl/yolks:java_9||Java 9",
+    "ghcr.io/pterodactyl/yolks:java_10||Java 10",
+    "ghcr.io/pterodactyl/yolks:java_11||Java 11",
+    "ghcr.io/pterodactyl/yolks:java_12||Java 12",
+    "ghcr.io/pterodactyl/yolks:java_13||Java 13",
+    "ghcr.io/pterodactyl/yolks:java_14||Java 14",
+    "ghcr.io/pterodactyl/yolks:java_15||Java 15",
+    "ghcr.io/pterodactyl/yolks:java_16||Java 16",
+    "ghcr.io/pterodactyl/yolks:java_17||Java 17",
+    "ghcr.io/pterodactyl/yolks:java_18||Java 18",
+    "ghcr.io/pterodactyl/yolks:java_19||Java 19",
+    "ghcr.io/pterodactyl/yolks:java_20||Java 20",
+    "ghcr.io/pterodactyl/yolks:java_21||Java 21",
+    "ghcr.io/pterodactyl/yolks:java_22||Java 22",
+    "ghcr.io/pterodactyl/yolks:java_23||Java 23",
+    "ghcr.io/pterodactyl/yolks:java_24||Java 24",
+    "ghcr.io/pterodactyl/yolks:java_25||Java 25",
+    "ghcr.io/pterodactyl/yolks:java_26||Java 26",
+    "ghcr.io/pterodactyl/yolks:java_27||Java 27",
+]
+startup = "sh -c \"if [ ! -f forge-installed ] && [ -f forge-installer.jar ]; then java -jar forge-installer.jar --installServer && touch forge-installed; fi; if [ -f run.sh ]; then exec sh run.sh; else exec java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}} nogui; fi\""
+done = ['regex:.*Done \(.*\)!']
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl jq
+forge="${FORGE_VERSION}"
+if [ -z "${forge}" ] || [ "${forge}" = "latest" ]; then
+  forge=$(curl -fsSL https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json | jq -r --arg key "${MC_VERSION}-latest" '.promos[$key] // empty')
+fi
+if [ -z "${forge}" ]; then
+  echo "No Forge build found for Minecraft ${MC_VERSION}; set FORGE_VERSION manually." >&2
+  exit 1
+fi
+curl -fsSL -o forge-installer.jar "https://maven.minecraftforge.net/net/minecraftforge/forge/${MC_VERSION}-${forge}/forge-${MC_VERSION}-${forge}-installer.jar"
+echo "Downloaded Forge ${MC_VERSION}-${forge} installer"
+"""
+
+[egg.variables]
+SERVER_JARFILE = "server.jar"
+MC_VERSION = "26.3"
+FORGE_VERSION = "latest"
+
+[[egg]]
+id = "purpur"
+name = "Minecraft Purpur"
+description = "Purpur, the Pufferfish fork with configurable gameplay tweaks."
+default_docker_img = "ghcr.io/pterodactyl/yolks:java_21"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:java_8||Java 8",
+    "ghcr.io/pterodactyl/yolks:java_9||Java 9",
+    "ghcr.io/pterodactyl/yolks:java_10||Java 10",
+    "ghcr.io/pterodactyl/yolks:java_11||Java 11",
+    "ghcr.io/pterodactyl/yolks:java_12||Java 12",
+    "ghcr.io/pterodactyl/yolks:java_13||Java 13",
+    "ghcr.io/pterodactyl/yolks:java_14||Java 14",
+    "ghcr.io/pterodactyl/yolks:java_15||Java 15",
+    "ghcr.io/pterodactyl/yolks:java_16||Java 16",
+    "ghcr.io/pterodactyl/yolks:java_17||Java 17",
+    "ghcr.io/pterodactyl/yolks:java_18||Java 18",
+    "ghcr.io/pterodactyl/yolks:java_19||Java 19",
+    "ghcr.io/pterodactyl/yolks:java_20||Java 20",
+    "ghcr.io/pterodactyl/yolks:java_21||Java 21",
+    "ghcr.io/pterodactyl/yolks:java_22||Java 22",
+    "ghcr.io/pterodactyl/yolks:java_23||Java 23",
+    "ghcr.io/pterodactyl/yolks:java_24||Java 24",
+    "ghcr.io/pterodactyl/yolks:java_25||Java 25",
+    "ghcr.io/pterodactyl/yolks:java_26||Java 26",
+    "ghcr.io/pterodactyl/yolks:java_27||Java 27",
+]
+startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
+done = ['regex:.*Done \(.*\)!']
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl
+curl -fsSL -o "${SERVER_JARFILE}" "https://api.purpurmc.org/v2/purpur/${MC_VERSION}/latest/download"
+echo "Installed ${SERVER_JARFILE}"
+"""
+
+[egg.variables]
+SERVER_JARFILE = "server.jar"
+MC_VERSION = "26.3"
+
+[[egg]]
+id = "spigot"
+name = "Minecraft Spigot"
+description = "Spigot, built from source with BuildTools (install takes several minutes)."
+default_docker_img = "ghcr.io/pterodactyl/yolks:java_21"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:java_8||Java 8",
+    "ghcr.io/pterodactyl/yolks:java_9||Java 9",
+    "ghcr.io/pterodactyl/yolks:java_10||Java 10",
+    "ghcr.io/pterodactyl/yolks:java_11||Java 11",
+    "ghcr.io/pterodactyl/yolks:java_12||Java 12",
+    "ghcr.io/pterodactyl/yolks:java_13||Java 13",
+    "ghcr.io/pterodactyl/yolks:java_14||Java 14",
+    "ghcr.io/pterodactyl/yolks:java_15||Java 15",
+    "ghcr.io/pterodactyl/yolks:java_16||Java 16",
+    "ghcr.io/pterodactyl/yolks:java_17||Java 17",
+    "ghcr.io/pterodactyl/yolks:java_18||Java 18",
+    "ghcr.io/pterodactyl/yolks:java_19||Java 19",
+    "ghcr.io/pterodactyl/yolks:java_20||Java 20",
+    "ghcr.io/pterodactyl/yolks:java_21||Java 21",
+    "ghcr.io/pterodactyl/yolks:java_22||Java 22",
+    "ghcr.io/pterodactyl/yolks:java_23||Java 23",
+    "ghcr.io/pterodactyl/yolks:java_24||Java 24",
+    "ghcr.io/pterodactyl/yolks:java_25||Java 25",
+    "ghcr.io/pterodactyl/yolks:java_26||Java 26",
+    "ghcr.io/pterodactyl/yolks:java_27||Java 27",
+]
+startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
+done = ['regex:.*Done \(.*\)!']
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl git
+apk add --no-cache openjdk21-jdk >/dev/null 2>&1 || apk add --no-cache openjdk21 >/dev/null 2>&1 || apk add --no-cache openjdk21-jre-headless
+curl -fsSL -o BuildTools.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/BuildTools.jar
+java -jar BuildTools.jar --rev "${MC_VERSION}"
+jar=$(ls -1 spigot*.jar | grep -v sources | head -n 1)
+cp -f "${jar}" "${SERVER_JARFILE}"
+rm -f BuildTools.jar
+echo "Installed ${SERVER_JARFILE}"
+"""
+
+[egg.variables]
+SERVER_JARFILE = "server.jar"
+MC_VERSION = "26.3"
+
+[[egg]]
+id = "sponge"
+name = "Minecraft Sponge"
+description = "SpongeVanilla, the Sponge API implementation for Minecraft: Java Edition."
+default_docker_img = "ghcr.io/pterodactyl/yolks:java_21"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:java_8||Java 8",
+    "ghcr.io/pterodactyl/yolks:java_9||Java 9",
+    "ghcr.io/pterodactyl/yolks:java_10||Java 10",
+    "ghcr.io/pterodactyl/yolks:java_11||Java 11",
+    "ghcr.io/pterodactyl/yolks:java_12||Java 12",
+    "ghcr.io/pterodactyl/yolks:java_13||Java 13",
+    "ghcr.io/pterodactyl/yolks:java_14||Java 14",
+    "ghcr.io/pterodactyl/yolks:java_15||Java 15",
+    "ghcr.io/pterodactyl/yolks:java_16||Java 16",
+    "ghcr.io/pterodactyl/yolks:java_17||Java 17",
+    "ghcr.io/pterodactyl/yolks:java_18||Java 18",
+    "ghcr.io/pterodactyl/yolks:java_19||Java 19",
+    "ghcr.io/pterodactyl/yolks:java_20||Java 20",
+    "ghcr.io/pterodactyl/yolks:java_21||Java 21",
+    "ghcr.io/pterodactyl/yolks:java_22||Java 22",
+    "ghcr.io/pterodactyl/yolks:java_23||Java 23",
+    "ghcr.io/pterodactyl/yolks:java_24||Java 24",
+    "ghcr.io/pterodactyl/yolks:java_25||Java 25",
+    "ghcr.io/pterodactyl/yolks:java_26||Java 26",
+    "ghcr.io/pterodactyl/yolks:java_27||Java 27",
+]
+startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
+done = ['regex:.*Done \(.*\)!']
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl
+repo="https://repo.spongepowered.org/repository/maven-public/org/spongepowered/spongevanilla"
+ver="${SPONGE_VERSION}"
+if [ -z "${ver}" ] || [ "${ver}" = "latest" ]; then
+  ver=$(curl -fsSL "${repo}/maven-metadata.xml" | grep -o '<release>[^<]*</release>' | sed 's/<[^>]*>//g')
+fi
+curl -fsSL -o "${SERVER_JARFILE}" "${repo}/${ver}/spongevanilla-${ver}.jar"
+echo "Installed SpongeVanilla ${ver} as ${SERVER_JARFILE}"
+"""
+
+[egg.variables]
+SERVER_JARFILE = "server.jar"
+SPONGE_VERSION = "latest"
+
+[[egg]]
+id = "pumpkinmc"
+name = "Minecraft PumpkinMC"
+description = "Pumpkin, the fast Minecraft server written from scratch in Rust."
+default_docker_img = "ghcr.io/pterodactyl/yolks:debian"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:debian||Minecraft PumpkinMC",
+]
+startup = "./pumpkin"
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl
+base="https://github.com/Pumpkin-MC/Pumpkin/releases/latest/download"
+for asset in pumpkin-x86_64-Linux pumpkin-x86_64-linux pumpkin-x86_64-unknown-linux-gnu; do
+  if curl -fsfLo pumpkin "${base}/${asset}"; then
+    chmod +x pumpkin
+    echo "Installed Pumpkin (${asset})"
+    exit 0
+  fi
+done
+echo "Could not download a Pumpkin release asset" >&2
+exit 1
+"""
+
+[egg.variables]
+
+[[egg]]
+id = "steelmc"
+name = "Minecraft SteelMC"
+description = "SteelMC, an independent Minecraft: Java Edition server implementation written in Rust."
+default_docker_img = "ghcr.io/pterodactyl/yolks:debian"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:debian||Minecraft SteelMC",
+]
+startup = "./steel"
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl
+curl -fsSL -o steel "https://github.com/Steel-Foundation/SteelMC/releases/latest/download/steel-linux"
+chmod +x steel
+echo "Installed SteelMC ($(./steel --version 2>/dev/null || echo latest))"
+"""
+
+[egg.variables]

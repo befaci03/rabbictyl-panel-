@@ -8,7 +8,10 @@ description = "Python applications"
 id = "python"
 name = "Python"
 description = "Runs a Python entry script. Installs requirements.txt during setup when present."
-docker_image = "python:3.15"
+default_docker_img = "python:3.15"
+docker_images = [
+    "python:3.15||Python",
+]
 startup = "python {{MAIN_FILE}}"
 script_container = "python:3.15"
 script_entrypoint = "sh"

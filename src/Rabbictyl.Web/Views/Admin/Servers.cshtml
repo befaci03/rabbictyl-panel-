@@ -70,11 +70,16 @@
                                 <option value="">@L["admin.games.noTemplate"]</option>
                                 @foreach (var template in Model.Eggs)
                                 {
-                                    <option value="@template.Egg.Uuid" data-images="@template.Egg.DockerImagesJson">
+                                    var choices = EggTemplate.ImageChoices(template.Egg);
+                                    <option value="@template.Egg.Uuid"
+                                            data-images="@System.Text.Json.JsonSerializer.Serialize(choices.Select(choice => new { name = choice.Key, image = choice.Value }))">
                                         @(template.NestName is null ? template.Egg.Name : $"{template.NestName} / {template.Egg.Name}")
+                                        @(choices.Count > 1 ? $" ({choices.Count} images)" : string.Empty)
                                     </option>
                                 }
                             </select>
+                            <div class="nest-egg__images" id="server-egg-images"></div>
+                            <span class="form__hint">Available images for the selected egg.</span>
                         </div>
                         <div class="form__group">
                             <label class="form__label" for="server-description">Description</label>
@@ -195,6 +200,7 @@
         }
 
         const fallback = image.innerHTML;
+        const chips = document.getElementById("server-egg-images");
 
         function applyImages() {
             const option = egg.options[egg.selectedIndex];
@@ -206,9 +212,23 @@
                 images = null;
             }
 
-            const entries = images && typeof images === "object"
-                ? Object.entries(images).filter(([, value]) => value)
-                : [];
+            const entries = Array.isArray(images)
+                ? images.filter((item) => item && item.image).map((item) => [item.name || item.image, item.image])
+                : images && typeof images === "object"
+                    ? Object.entries(images).filter(([, value]) => value)
+                    : [];
+
+            if (chips) {
+                chips.innerHTML = "";
+
+                for (const [name, value] of entries) {
+                    const chip = document.createElement("span");
+                    chip.className = "chip chip--image";
+                    chip.title = value;
+                    chip.textContent = name === "default" ? "Default image" : name;
+                    chips.appendChild(chip);
+                }
+            }
 
             if (entries.length === 0) {
                 image.innerHTML = fallback;

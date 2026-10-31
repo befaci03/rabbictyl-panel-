@@ -10,7 +10,10 @@ description = "TeamSpeak 3 voice servers"
 id = "teamspeak3"
 name = "TeamSpeak 3"
 description = "TeamSpeak 3 server. The panel allocation is used as the default voice port; query (10011) and file transfer (30033) keep their defaults."
-docker_image = "teamspeak:latest"
+default_docker_img = "teamspeak:latest"
+docker_images = [
+    "teamspeak:latest||TeamSpeak 3",
+]
 startup = "ts3server default_voice_port={{SERVER_PORT}}"
 script_container = "ghcr.io/pterodactyl/installers:alpine"
 script_entrypoint = "ash"

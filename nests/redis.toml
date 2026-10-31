@@ -10,7 +10,10 @@ description = "Redis data stores"
 id = "redis"
 name = "Redis"
 description = "Redis bound to the allocated port. Set REDIS_PASSWORD to require a password (protected mode is disabled so remote clients can connect)."
-docker_image = "redis:8.10"
+default_docker_img = "redis:8.10"
+docker_images = [
+    "redis:8.10||Redis",
+]
 startup = "sh -c 'if [ -n \"${REDIS_PASSWORD}\" ]; then exec redis-server --port {{SERVER_PORT}} --bind 0.0.0.0 --protected-mode no --requirepass \"${REDIS_PASSWORD}\"; else exec redis-server --port {{SERVER_PORT}} --bind 0.0.0.0 --protected-mode no; fi'"
 done = ['regex:.*Ready to accept connections']
 script_container = "ghcr.io/pterodactyl/installers:alpine"

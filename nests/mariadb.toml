@@ -11,7 +11,10 @@ description = "MariaDB database servers"
 id = "mariadb"
 name = "MariaDB"
 description = "MariaDB with a file-backed data directory under /home/container. Set the root password before first boot."
-docker_image = "mariadb:latest"
+default_docker_img = "mariadb:latest"
+docker_images = [
+    "mariadb:latest||MariaDB",
+]
 startup = "docker-entrypoint.sh mariadbd --port={{SERVER_PORT}}"
 done = ['regex:.*ready for connections']
 script_container = "ghcr.io/pterodactyl/installers:alpine"

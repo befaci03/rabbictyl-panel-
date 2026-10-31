@@ -639,8 +639,50 @@ public sealed class AdminController : Controller
     }
 
     [HttpGet("games")]
-    public async Task<IActionResult> Games(CancellationToken cancellationToken) =>
-        View(await _templates.ListAsync(cancellationToken));
+    public async Task<IActionResult> Games(string? tab, CancellationToken cancellationToken)
+    {
+        // Group by nest so a panel with twenty nest files stays readable: one
+        // card per nest, its eggs listed inside, panel-only eggs last.
+        var nests = (await _templates.ListAsync(cancellationToken))
+            .GroupBy(
+                template => template.FromNest ? template.NestId ?? string.Empty : string.Empty,
+                StringComparer.Ordinal)
+            .Select(group => new AdminNestGroup
+            {
+                Id = group.Key,
+                Name = group.Key.Length == 0 ? string.Empty : group.First().NestName ?? group.Key,
+                Version = group.First().NestVersion,
+                Eggs = group.OrderBy(template => template.Egg.Name, StringComparer.OrdinalIgnoreCase).ToList(),
+                EditedAt = group.Select(template => template.EditedAt).Max(),
+            })
+            .OrderBy(group => group.FromNest ? 0 : 1)
+            .ThenBy(group => group.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return View(new AdminNestsViewModel
+        {
+            Nests = nests,
+            Tab = tab switch
+            {
+                "import" => "import",
+                "files" => "files",
+                _ => "eggs",
+            },
+        });
+    }
+
+    [HttpGet("games/new")]
+    public IActionResult GameNew() => View("GameEdit", AdminGameEditViewModel.Blank());
+
+    [HttpGet("games/{uuid:guid}")]
+    public async Task<IActionResult> GameEdit(Guid uuid, CancellationToken cancellationToken)
+    {
+        var template = await _templates.FindAsync(uuid, cancellationToken);
+
+        return template is null
+            ? NotFound()
+            : View(AdminGameEditViewModel.From(template));
+    }
 
     [HttpPost("games/create")]
     public async Task<IActionResult> CreateGame(
@@ -661,8 +703,7 @@ public sealed class AdminController : Controller
             Description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim(),
             Author = string.IsNullOrWhiteSpace(form.Author) ? string.Empty : form.Author.Trim(),
             DockerImage = form.Image.Trim(),
-            DockerImagesJson = System.Text.Json.JsonSerializer.Serialize(
-                new Dictionary<string, string> { ["default"] = form.Image.Trim() }),
+            DockerImagesJson = BuildImagesJson(form.Image.Trim(), form.Images, form.ImageNames),
             StartupCommand = form.Startup.Trim(),
             ScriptContainer = string.IsNullOrWhiteSpace(form.ScriptContainer) ? "alpine:3.20" : form.ScriptContainer.Trim(),
             ScriptEntrypoint = string.IsNullOrWhiteSpace(form.ScriptEntrypoint) ? "ash" : form.ScriptEntrypoint.Trim(),
@@ -746,6 +787,18 @@ public sealed class AdminController : Controller
         egg.StartupCommand = form.Startup.Trim();
         egg.DockerImage = form.Image.Trim();
         egg.DockerImagesJson = BuildImagesJson(form.Image.Trim(), form.Images, form.ImageNames);
+        egg.ProcessConfigurationJson = EggTemplate.BuildProcessConfiguration(
+            SplitLines(form.DonePatterns),
+            form.StopType,
+            form.StopValue);
+        egg.ScriptContainer = string.IsNullOrWhiteSpace(form.ScriptContainer)
+            ? "alpine:3.20"
+            : form.ScriptContainer.Trim();
+        egg.ScriptEntrypoint = string.IsNullOrWhiteSpace(form.ScriptEntrypoint)
+            ? "ash"
+            : form.ScriptEntrypoint.Trim();
+        egg.ScriptInstall = string.IsNullOrWhiteSpace(form.InstallScript) ? null : form.InstallScript.Trim();
+        egg.VariablesJson = EggTemplate.BuildVariables(SplitLines(form.Variables));
 
         if (created)
         {
@@ -760,7 +813,7 @@ public sealed class AdminController : Controller
             ? $"Saved {egg.Name} as a panel copy. The nest file is unchanged."
             : $"Updated nest egg {egg.Name}.";
 
-        return RedirectToAction(nameof(Games));
+        return RedirectToAction(nameof(GameEdit), new { uuid = egg.Uuid });
     }
 
     /// <summary>

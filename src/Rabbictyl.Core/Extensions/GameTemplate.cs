@@ -12,7 +12,8 @@ public sealed record GameTemplate(
     string? NestId,
     string? NestName,
     bool FromNest,
-    DateTimeOffset? EditedAt = null);
+    DateTimeOffset? EditedAt = null,
+    string? NestVersion = null);
 
 /// <summary>A nest file as loaded from <c>nests/*.toml</c>.</summary>
 public sealed record NestDescriptor(

@@ -14,7 +14,7 @@
        asp-controller="Admin" asp-action="Servers">@L["admin.servers"]</a>
     <a class="tab @(current == "Users" ? "is-active" : string.Empty)"
        asp-controller="Admin" asp-action="Users">@L["admin.users"]</a>
-    <a class="tab @(current == "Games" ? "is-active" : string.Empty)"
+    <a class="tab @(current is "Games" or "GameEdit" or "GameNew" ? "is-active" : string.Empty)"
        asp-controller="Admin" asp-action="Games">@L["admin.games"]</a>
     <a class="tab @(current == "Rapi" ? "is-active" : string.Empty)"
        asp-controller="Admin" asp-action="Rapi">@L["admin.rapi"]</a>

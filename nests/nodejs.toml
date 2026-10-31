@@ -8,7 +8,10 @@ description = "Node.js applications"
 id = "nodejs"
 name = "Node.js"
 description = "Runs a Node.js entry script. Runs npm install during setup when package.json exists."
-docker_image = "node:26"
+default_docker_img = "node:26"
+docker_images = [
+    "node:26||Node.js",
+]
 startup = "node {{MAIN_FILE}}"
 script_container = "node:26"
 script_entrypoint = "sh"

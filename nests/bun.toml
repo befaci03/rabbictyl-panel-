@@ -7,23 +7,17 @@ description = "Bun JavaScript/TypeScript runtime"
 [[egg]]
 id = "bun"
 name = "Bun"
-description = "Runs a Bun entry script. Installs dependencies from package.json during setup."
-docker_image = "oven/bun:1.4"
-startup = "bun {{MAIN_FILE}}"
-script_container = "oven/bun:1.4"
-script_entrypoint = "sh"
-script_install = """
-#!/bin/sh
-set -e
-if [ -f package.json ]; then
-  bun install
-  echo "Installed dependencies"
-fi
-if [ ! -f "${MAIN_FILE}" ]; then
-  printf 'console.log("Hello from Bun");\\n' > "${MAIN_FILE}"
-  echo "Created ${MAIN_FILE}"
-fi
-"""
+description = "Runs a Bun entry script with the Bun image you pick. Upload your sources and it starts with bun."
+default_docker_img = "oven/bun:latest"
+docker_images = [
+    "oven/bun:latest||Bun (latest)",
+    "oven/bun:1.4||Bun 1.4",
+    "oven/bun:1.3||Bun 1.3",
+    "oven/bun:1.2||Bun 1.2",
+    "oven/bun:1.1||Bun 1.1",
+    "oven/bun:1.0||Bun 1.0",
+]
+startup = "bun run {{MAIN_FILE}}"
 
 [egg.variables]
 MAIN_FILE = "index.ts"

@@ -26,4 +26,10 @@ public sealed class ServerPageViewModel
 
     public IReadOnlyDictionary<string, string> Environment { get; init; } =
         new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Docker images an administrator can switch this server to. Empty unless the
+    /// viewer is an administrator and the server's egg offers more than one.
+    /// </summary>
+    public IReadOnlyList<KeyValuePair<string, string>> Images { get; init; } = [];
 }

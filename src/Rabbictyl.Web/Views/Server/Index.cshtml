@@ -182,7 +182,36 @@
                     </div>
                     <div>
                         <dt>@L["server.startup.image"]</dt>
-                        <dd><code>@(string.IsNullOrWhiteSpace(server.Image) ? "—" : server.Image)</code></dd>
+                        <dd>
+                            <code id="server-image-current">@(string.IsNullOrWhiteSpace(server.Image) ? "—" : server.Image)</code>
+                            @if (Model.Images.Count > 0)
+                            {
+                                <form class="stack form"
+                                      id="server-image-form"
+                                      data-server-uuid="@server.Uuid"
+                                      data-saved="@L["server.startup.image.saved"]"
+                                      data-failed="@L["server.startup.image.failed"]">
+                                    <label class="form__label" for="server-image-select">@L["server.startup.image.change"]</label>
+                                    <select class="form__input" id="server-image-select">
+                                        @if (!Model.Images.Any(image => string.Equals(image.Value, server.Image, StringComparison.Ordinal)))
+                                        {
+                                            <option value="@server.Image" selected>@L["server.startup.image.current"] — @server.Image</option>
+                                        }
+                                        @foreach (var image in Model.Images)
+                                        {
+                                            <option value="@image.Value" selected="@(string.Equals(image.Value, server.Image, StringComparison.Ordinal))">
+                                                @(string.Equals(image.Key, "default", StringComparison.Ordinal) ? L["admin.games.defaultImage"] : image.Key) — @image.Value
+                                            </option>
+                                        }
+                                    </select>
+                                    <span class="form__hint">@L["server.startup.image.hint"]</span>
+                                    <div class="admin-create__actions">
+                                        <button type="submit" class="button button--primary button--sm">@L["server.startup.image.apply"]</button>
+                                    </div>
+                                    <span class="form__hint" id="server-image-status" role="status"></span>
+                                </form>
+                            }
+                        </dd>
                     </div>
                 </dl>
             </section>
@@ -292,5 +321,63 @@
                 </section>
             </aside>
         </div>
+
+        @if (Model.Images.Count > 0)
+        {
+            <script>
+                // Admin-only: switch the container image of an egg with several
+                // images. The panel syncs the new image with pats.
+                (() => {
+                    "use strict";
+
+                    const form = document.getElementById("server-image-form");
+                    const select = document.getElementById("server-image-select");
+                    const current = document.getElementById("server-image-current");
+                    const status = document.getElementById("server-image-status");
+                    const button = form?.querySelector('button[type="submit"]');
+
+                    if (!form || !select) {
+                        return;
+                    }
+
+                    const token = document.querySelector('meta[name="csrf-token"]')?.content || "";
+
+                    form.addEventListener("submit", async (event) => {
+                        event.preventDefault();
+                        status.textContent = "";
+
+                        if (button) {
+                            button.disabled = true;
+                        }
+
+                        try {
+                            const response = await fetch(`/api/client/servers/${form.dataset.serverUuid}/startup/image`, {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": token },
+                                body: JSON.stringify({ image: select.value }),
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`Request failed (HTTP ${response.status}).`);
+                            }
+
+                            const data = await response.json().catch(() => ({}));
+
+                            if (data.image && current) {
+                                current.textContent = data.image;
+                            }
+
+                            status.textContent = form.dataset.saved || "";
+                        } catch {
+                            status.textContent = form.dataset.failed || "";
+                        } finally {
+                            if (button) {
+                                button.disabled = false;
+                            }
+                        }
+                    });
+                })();
+            </script>
+        }
     }
 </section>

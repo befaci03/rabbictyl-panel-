@@ -1574,6 +1574,180 @@ code {
   margin: 2px 0 0;
 }
 
+// Admin nests ---------------------------------------------------------------
+
+.nest-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.nest-toolbar .form__group {
+  margin: 0;
+  min-width: 210px;
+}
+
+.nest-toolbar__count {
+  margin-bottom: 10px;
+}
+
+.nest-group {
+  padding: 0;
+  overflow: hidden;
+}
+
+.nest-group__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 18px;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  list-style: none;
+}
+
+.nest-group__head::-webkit-details-marker {
+  display: none;
+}
+
+.nest-group[open] > .nest-group__head {
+  border-bottom-color: var(--border);
+}
+
+.nest-group__title {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.nest-group__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.nest-eggs {
+  display: grid;
+}
+
+.nest-egg {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.nest-egg:first-child {
+  border-top: 0;
+}
+
+.nest-egg__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nest-egg__name {
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.nest-egg__name:hover {
+  color: var(--accent-strong);
+}
+
+.nest-egg__desc {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nest-egg__images {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+  max-width: 320px;
+}
+
+.chip {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip--image {
+  border-color: transparent;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.chip--more {
+  border-style: dashed;
+}
+
+.nest-egg__stat {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.nest-egg__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.image-rows {
+  display: grid;
+  gap: 8px;
+}
+
+.image-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(180px, 2fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .nest-egg {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+  }
+
+  .nest-egg__images {
+    justify-content: flex-start;
+    max-width: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .image-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .image-row input[name='ImageNames'] {
+    grid-column: 1 / -1;
+  }
+}
+
 // Admin create panels -------------------------------------------------------
 
 .admin-create {

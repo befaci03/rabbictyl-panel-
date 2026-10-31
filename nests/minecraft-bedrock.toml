@@ -1,16 +1,20 @@
 version = "1.00"
-# Minecraft: Bedrock Edition servers (BDS, PocketMine-MP and Nukkit).
+# Minecraft: Bedrock Edition. Nukkit runs on Java, so its egg offers the Java
+# images as well; Bedrock and PocketMine use their own base images.
 
 id = "minecraft-bedrock"
-name = "Minecraft Bedrock"
+name = "Minecraft: Bedrock Edition"
 author = "Rabbictyl"
-description = "Bedrock Edition servers"
+description = "Bedrock Dedicated Server, PocketMine and Nukkit."
 
 [[egg]]
 id = "bedrock"
 name = "Bedrock Dedicated Server"
 description = "Mojang's official Bedrock Dedicated Server (Ubuntu image, port patched on boot)."
-docker_image = "ubuntu:24.04"
+default_docker_img = "ubuntu:24.04"
+docker_images = [
+    "ubuntu:24.04||Bedrock Dedicated Server",
+]
 startup = "sh -c 'ldd ./bedrock_server 2>/dev/null | grep -q \"not found\" && { apt-get update -qq >/dev/null 2>&1; apt-get install -y -qq libcurl4t64 libssl3t64 zlib1g >/dev/null 2>&1; }; case \"{{SERVER_PORT}}\" in *[!0-9]*) ;; *) sed -i \"s/^server-port=.*/server-port={{SERVER_PORT}}/\" server.properties 2>/dev/null ;; esac; LD_LIBRARY_PATH=. exec ./bedrock_server'"
 done = ['regex:.*Server started']
 stop_type = "command"
@@ -38,7 +42,10 @@ BDS_VERSION = "26.60"
 id = "pocketmine"
 name = "PocketMine-MP"
 description = "PocketMine-MP, the original PHP server software for Bedrock Edition."
-docker_image = "debian:12"
+default_docker_img = "debian:12"
+docker_images = [
+    "debian:12||PocketMine-MP",
+]
 startup = "sh -c 'case \"{{SERVER_PORT}}\" in *[!0-9]*) ;; *) sed -i \"s/^server-port=.*/server-port={{SERVER_PORT}}/\" server.properties 2>/dev/null ;; esac; p=$(find bin -type f -name php 2>/dev/null | head -n 1); if [ -z \"$p\" ]; then echo \"PHP runtime missing, re-run the install script\" >&2; exit 1; fi; exec \"$p\" PocketMine-MP.phar --no-wizard'"
 done = ['regex:.*Done \(.*\)!']
 stop_type = "command"
@@ -65,7 +72,29 @@ echo "Installed PocketMine-MP with bundled PHP"
 id = "nukkit"
 name = "Nukkit"
 description = "Nukkit, the Java-based server software for Bedrock Edition."
-docker_image = "ghcr.io/pterodactyl/yolks:java_21"
+default_docker_img = "ghcr.io/pterodactyl/yolks:java_21"
+docker_images = [
+    "ghcr.io/pterodactyl/yolks:java_8||Java 8",
+    "ghcr.io/pterodactyl/yolks:java_9||Java 9",
+    "ghcr.io/pterodactyl/yolks:java_10||Java 10",
+    "ghcr.io/pterodactyl/yolks:java_11||Java 11",
+    "ghcr.io/pterodactyl/yolks:java_12||Java 12",
+    "ghcr.io/pterodactyl/yolks:java_13||Java 13",
+    "ghcr.io/pterodactyl/yolks:java_14||Java 14",
+    "ghcr.io/pterodactyl/yolks:java_15||Java 15",
+    "ghcr.io/pterodactyl/yolks:java_16||Java 16",
+    "ghcr.io/pterodactyl/yolks:java_17||Java 17",
+    "ghcr.io/pterodactyl/yolks:java_18||Java 18",
+    "ghcr.io/pterodactyl/yolks:java_19||Java 19",
+    "ghcr.io/pterodactyl/yolks:java_20||Java 20",
+    "ghcr.io/pterodactyl/yolks:java_21||Java 21",
+    "ghcr.io/pterodactyl/yolks:java_22||Java 22",
+    "ghcr.io/pterodactyl/yolks:java_23||Java 23",
+    "ghcr.io/pterodactyl/yolks:java_24||Java 24",
+    "ghcr.io/pterodactyl/yolks:java_25||Java 25",
+    "ghcr.io/pterodactyl/yolks:java_26||Java 26",
+    "ghcr.io/pterodactyl/yolks:java_27||Java 27",
+]
 startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
 done = ['regex:.*Done \(.*\)!']
 stop_type = "command"
