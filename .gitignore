@@ -18,10 +18,14 @@ config/panel.toml
 .env.*
 !.env.example
 storage/
-src/RabbiCtyl.Web/storage/
+src/Rabbictyl.Web/storage/
 
 # Local work tracker
 todo.md
+# Agents
+**/.claude/
+**/.freebuff/
+**/.creecode
 
 # Databases
 *.db
@@ -38,15 +42,15 @@ logs/
 node_modules/
 frontend/dist/
 
-# Compiled addon assemblies (built from src/RabbiCtyl.Addon.*)
+# Compiled addon assemblies (built from src/Rabbictyl.Addon.*)
 addons/*/lib/
 
 # Generated frontend and extension bundles
-src/RabbiCtyl.Web/wwwroot/assets/css/
-src/RabbiCtyl.Web/wwwroot/assets/js/
-src/RabbiCtyl.Web/wwwroot/themes/
-src/RabbiCtyl.Web/wwwroot/addons/
-src/RabbiCtyl.Web/wwwroot/assets/**/*.map
+src/Rabbictyl.Web/wwwroot/assets/css/
+src/Rabbictyl.Web/wwwroot/assets/js/
+src/Rabbictyl.Web/wwwroot/themes/
+src/Rabbictyl.Web/wwwroot/addons/
+src/Rabbictyl.Web/wwwroot/assets/**/*.map
 
 # OS noise
 .DS_Store

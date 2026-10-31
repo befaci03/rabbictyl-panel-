@@ -1,0 +1,30 @@
+version = "1.00"
+# Minecraft: Purpur (Pufferfish fork with extra gameplay tweaks).
+
+id = "minecraft-purpur"
+name = "Minecraft Purpur"
+author = "Rabbictyl"
+description = "Purpur Edition servers"
+
+[[egg]]
+id = "purpur"
+name = "Minecraft Purpur"
+description = "Purpur, the Pufferfish fork with configurable gameplay tweaks."
+docker_image = "ghcr.io/pterodactyl/yolks:java_21"
+startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
+done = ['regex:.*Done \(.*\)!']
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl
+curl -fsSL -o "${SERVER_JARFILE}" "https://api.purpurmc.org/v2/purpur/${MC_VERSION}/latest/download"
+echo "Installed ${SERVER_JARFILE}"
+"""
+
+[egg.variables]
+SERVER_JARFILE = "server.jar"
+MC_VERSION = "26.3"

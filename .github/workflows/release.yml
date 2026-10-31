@@ -67,12 +67,12 @@ jobs:
 
       - name: Build and test
         run: |
-          dotnet build RabbiCtyl.sln -c Release
-          dotnet test tests/RabbiCtyl.Tests/RabbiCtyl.Tests.csproj -c Release --no-build
+          dotnet build Rabbictyl.sln -c Release
+          dotnet test tests/Rabbictyl.Tests/Rabbictyl.Tests.csproj -c Release --no-build
 
       - name: Publish the panel
         run: |
-          dotnet publish src/RabbiCtyl.Web/RabbiCtyl.Web.csproj \
+          dotnet publish src/Rabbictyl.Web/Rabbictyl.Web.csproj \
             -c Release \
             -o artifacts/rabbictyl \
             -p:Version=${{ inputs.version }}
@@ -98,7 +98,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "v$VERSION" -m "RabbiCtyl $VERSION"
+          git tag -a "v$VERSION" -m "Rabbict_yl $VERSION"
           git push origin "v$VERSION"
 
       - name: Publish the GitHub release
@@ -114,6 +114,6 @@ jobs:
           fi
 
           gh release create "v$VERSION" "artifacts/rabbictyl-$VERSION.zip" \
-            --title "RabbiCtyl $VERSION" \
+            --title "Rabbict_yl $VERSION" \
             --generate-notes \
             "${flags[@]}"

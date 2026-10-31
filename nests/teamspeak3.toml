@@ -1,0 +1,24 @@
+version = "1.00"
+# TeamSpeak 3 server (official Docker image; the license is accepted via env).
+
+id = "teamspeak3"
+name = "TeamSpeak 3"
+author = "Rabbictyl"
+description = "TeamSpeak 3 voice servers"
+
+[[egg]]
+id = "teamspeak3"
+name = "TeamSpeak 3"
+description = "TeamSpeak 3 server. The panel allocation is used as the default voice port; query (10011) and file transfer (30033) keep their defaults."
+docker_image = "teamspeak:latest"
+startup = "ts3server default_voice_port={{SERVER_PORT}}"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+echo "TeamSpeak 3 server ready (license accepted via TS3SERVER_LICENSE)"
+"""
+
+[egg.variables]
+TS3SERVER_LICENSE = "accept"

@@ -1,0 +1,29 @@
+version = "1.00"
+# MariaDB server; the official image entrypoint initialises the data directory
+# from the variables below and then starts mariadbd on the allocated port.
+
+id = "mariadb"
+name = "MariaDB"
+author = "Rabbictyl"
+description = "MariaDB database servers"
+
+[[egg]]
+id = "mariadb"
+name = "MariaDB"
+description = "MariaDB with a file-backed data directory under /home/container. Set the root password before first boot."
+docker_image = "mariadb:latest"
+startup = "docker-entrypoint.sh mariadbd --port={{SERVER_PORT}}"
+done = ['regex:.*ready for connections']
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+mkdir -p db
+echo "MariaDB data directory ready at /home/container/db"
+"""
+
+[egg.variables]
+MARIADB_ROOT_PASSWORD = "changeme"
+MARIADB_ROOT_HOST = "%"
+MARIADB_DATABASE = ""

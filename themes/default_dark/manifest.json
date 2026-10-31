@@ -2,8 +2,8 @@
   "id": "default_dark",
   "name": "Default Dark",
   "version": "1.0.0",
-  "description": "The default RabbiCtyl theme: neutral dark surfaces with a red-orange accent.",
-  "author": "RabbiCtyl",
+  "description": "The default Rabbict_yl theme: neutral dark surfaces with a red-orange accent.",
+  "author": "Rabbict_yl",
   "styles": [
     "styles/theme.scss",
     "styles/animations.css"

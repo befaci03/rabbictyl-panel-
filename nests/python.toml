@@ -1,0 +1,29 @@
+version = "1.00"
+id = "python"
+name = "Python"
+author = "Rabbictyl"
+description = "Python applications"
+
+[[egg]]
+id = "python"
+name = "Python"
+description = "Runs a Python entry script. Installs requirements.txt during setup when present."
+docker_image = "python:3.15"
+startup = "python {{MAIN_FILE}}"
+script_container = "python:3.15"
+script_entrypoint = "sh"
+script_install = """
+#!/bin/sh
+set -e
+if [ -f requirements.txt ]; then
+  pip install --no-cache-dir -r requirements.txt
+  echo "Installed requirements"
+fi
+if [ ! -f "${MAIN_FILE}" ]; then
+  printf 'print("Hello from Python")\\n' > "${MAIN_FILE}"
+  echo "Created ${MAIN_FILE}"
+fi
+"""
+
+[egg.variables]
+MAIN_FILE = "main.py"

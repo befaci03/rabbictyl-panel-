@@ -1,4 +1,4 @@
-# RabbiCtyl
+# Rabbict_yl
 
 A Pterodactyl-inspired game server panel built with ASP.NET Core (.NET 10), Razor views and
 pluggable persistence (SQLite, MySQL/MariaDB, PostgreSQL, MongoDB, Cassandra).
@@ -19,12 +19,12 @@ bun install
 bun run build
 cd ..
 
-dotnet run --project src/RabbiCtyl.Web
+dotnet run --project src/Rabbictyl.Web
 ```
 
 The panel listens on <http://localhost:8080>. `config/panel.toml` is resolved from the
 content root; set `RABBICTYL_CONFIG` to point somewhere else. Every option also has an
-environment override (see `src/RabbiCtyl.Configuration/PanelEnvironmentOverrides.cs`).
+environment override (see `src/Rabbictyl.Configuration/PanelEnvironmentOverrides.cs`).
 
 ## First run: bootstrap administrator
 
@@ -33,6 +33,8 @@ section in `config/panel.toml`. Set the password with the environment variable r
 writing it to disk:
 
 ```bash
+# you can keep it like that to be honest, no need to change
+# it because the admin account is temporary for account creation
 export RABBICTYL_BOOTSTRAP_ADMIN_PASSWORD='change-me-please'
 ```
 
@@ -79,7 +81,7 @@ encryption = "starttls"   # none | starttls | ssl
 username = "panel"
 password = "..."
 from_address = "panel@example.com"
-from_name = "RabbiCtyl"
+from_name = "Rabbict_yl"
 timeout_seconds = 15
 ```
 
@@ -104,7 +106,7 @@ Nests are TOML files in `nests/`. Every `[[egg]]` entry becomes a game template:
 ```toml
 id = "minecraft"
 name = "Minecraft"
-author = "RabbiCtyl"
+author = "Rabbict_yl"
 
 [[egg]]
 id = "java"
@@ -175,8 +177,8 @@ Suspended servers and servers on another node are refused.
 ## Checks
 
 ```bash
-dotnet build RabbiCtyl.sln
-dotnet test RabbiCtyl.sln
+dotnet build Rabbictyl.sln
+dotnet test Rabbictyl.sln
 cd frontend && bun run typecheck && bun run build
 ```
 
@@ -214,7 +216,7 @@ themes/my_theme/
 }
 ```
 
-`bun run build` compiles every theme into `src/RabbiCtyl.Web/wwwroot/themes/<id>/`,
+`bun run build` compiles every theme into `src/Rabbictyl.Web/wwwroot/themes/<id>/`,
 so `styles/theme.scss` is linked as `/themes/my_theme/styles/theme.css`. Assets are
 addressed by id and served from `/api/themes/{id}/assets/{assetId}`, which keeps
 templates independent of file paths.
@@ -225,7 +227,7 @@ layouts. The bundled `pterodactyl_blue` theme uses this option.
 
 ## Localization
 
-UI strings live in `src/RabbiCtyl.Web/Localization/<culture>.json` (`en` and `fr` ship
+UI strings live in `src/Rabbictyl.Web/Localization/<culture>.json` (`en` and `fr` ship
 by default). The panel negotiates the culture from the query string, the
 `.AspNetCore.Culture` cookie or the browser's `Accept-Language` header; the language
 selector in the top bar persists the choice in the cookie. Add another culture by
@@ -261,7 +263,7 @@ addons/example/
 ```
 
 An optional C# plugin can be declared with `"assembly": "Example.dll"` and a fully
-qualified `"entry"` type implementing `RabbiCtyl.Addons.Abstractions.IAddon`. Enabled
+qualified `"entry"` type implementing `Rabbictyl.Addons.Abstractions.IAddon`. Enabled
 assemblies are loaded into collectible load contexts at startup.
 
 API: `GET /api/addons`, `GET /api/addons/{id}` and
@@ -277,12 +279,12 @@ client (`frontend/src/ts/realtime.ts`) connects over WebSockets using
 ## Project layout
 
 ```text
-src/RabbiCtyl.Core              entities, store interfaces, manifests
-src/RabbiCtyl.Configuration     TOML options and environment overrides
-src/RabbiCtyl.Infrastructure    EF Core / Mongo / Cassandra stores, catalogs, addon host
-src/RabbiCtyl.Web               Razor UI, APIs, SignalR hub
-src/RabbiCtyl.Addons.Abstractions  IAddon contract for C# addons
+src/Rabbictyl.Core              entities, store interfaces, manifests
+src/Rabbictyl.Configuration     TOML options and environment overrides
+src/Rabbictyl.Infrastructure    EF Core / Mongo / Cassandra stores, catalogs, addon host
+src/Rabbictyl.Web               Razor UI, APIs, SignalR hub
+src/Rabbictyl.Addons.Abstractions  IAddon contract for C# addons
 frontend                        SCSS/TypeScript build for the shell, themes and addons
 themes, addons                  folder-based extensions
-tests/RabbiCtyl.Tests           xUnit tests
+tests/Rabbictyl.Tests           xUnit tests
 ```

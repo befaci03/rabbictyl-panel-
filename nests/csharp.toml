@@ -1,0 +1,95 @@
+version = "1.00"
+# C# / .NET. One egg per .NET release; the installer image matches the runtime.
+
+id = "csharp"
+name = "C# / .NET"
+author = "Rabbictyl"
+description = "C# applications on .NET"
+
+[[egg]]
+id = "dotnet_10"
+name = ".NET 10"
+description = "C# on .NET 10 (LTS). Creates a console project when the folder has no .csproj."
+docker_image = "mcr.microsoft.com/dotnet/sdk:10.0"
+startup = "sh -c 'ASPNETCORE_URLS=http://0.0.0.0:{{SERVER_PORT}} dotnet run --project {{DOTNET_PROJECT}} --no-launch-profile'"
+script_container = "mcr.microsoft.com/dotnet/sdk:10.0"
+script_entrypoint = "sh"
+script_install = """
+#!/bin/sh
+set -e
+if ! ls ./*.csproj >/dev/null 2>&1; then
+  dotnet new console -n server -o .
+  echo "Created starter project server.csproj"
+fi
+dotnet build -c Release --nologo
+echo "Build finished"
+"""
+
+[egg.variables]
+DOTNET_PROJECT = "."
+
+[[egg]]
+id = "dotnet_9"
+name = ".NET 9"
+description = "C# on .NET 9 (STS). Creates a console project when the folder has no .csproj."
+docker_image = "mcr.microsoft.com/dotnet/sdk:9.0"
+startup = "sh -c 'ASPNETCORE_URLS=http://0.0.0.0:{{SERVER_PORT}} dotnet run --project {{DOTNET_PROJECT}} --no-launch-profile'"
+script_container = "mcr.microsoft.com/dotnet/sdk:9.0"
+script_entrypoint = "sh"
+script_install = """
+#!/bin/sh
+set -e
+if ! ls ./*.csproj >/dev/null 2>&1; then
+  dotnet new console -n server -o .
+  echo "Created starter project server.csproj"
+fi
+dotnet build -c Release --nologo
+echo "Build finished"
+"""
+
+[egg.variables]
+DOTNET_PROJECT = "."
+
+[[egg]]
+id = "dotnet_8"
+name = ".NET 8"
+description = "C# on .NET 8 (LTS). Creates a console project when the folder has no .csproj."
+docker_image = "mcr.microsoft.com/dotnet/sdk:8.0"
+startup = "sh -c 'ASPNETCORE_URLS=http://0.0.0.0:{{SERVER_PORT}} dotnet run --project {{DOTNET_PROJECT}} --no-launch-profile'"
+script_container = "mcr.microsoft.com/dotnet/sdk:8.0"
+script_entrypoint = "sh"
+script_install = """
+#!/bin/sh
+set -e
+if ! ls ./*.csproj >/dev/null 2>&1; then
+  dotnet new console -n server -o .
+  echo "Created starter project server.csproj"
+fi
+dotnet build -c Release --nologo
+echo "Build finished"
+"""
+
+[egg.variables]
+DOTNET_PROJECT = "."
+
+[[egg]]
+id = "dotnet_7"
+name = ".NET 7"
+description = "C# on .NET 7 (EOL). Creates a console project when the folder has no .csproj."
+docker_image = "mcr.microsoft.com/dotnet/sdk:7.0"
+startup = "sh -c 'ASPNETCORE_URLS=http://0.0.0.0:{{SERVER_PORT}} dotnet run --project {{DOTNET_PROJECT}} --no-launch-profile'"
+script_container = "mcr.microsoft.com/dotnet/sdk:7.0"
+script_entrypoint = "sh"
+script_install = """
+#!/bin/sh
+set -e
+if ! ls ./*.csproj >/dev/null 2>&1; then
+  dotnet new console -n server -o .
+  echo "Created starter project server.csproj"
+fi
+dotnet build -c Release --nologo
+echo "Build finished"
+"""
+
+[egg.variables]
+DOTNET_PROJECT = "."

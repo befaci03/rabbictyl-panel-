@@ -1,4 +1,4 @@
-# RabbiCtyl panel configuration.
+# Rabbict_yl panel configuration.
 #
 # Copy this file to `config/panel.toml` and edit it. The panel reads the file
 # from `RABBICTYL_CONFIG` when set, otherwise from `config/panel.toml` next to
@@ -8,7 +8,7 @@
 # README for the full list.
 
 [app]
-name = "RabbiCtyl"
+name = "Rabbict_yl"
 url = "http://localhost:8080"
 environment = "Development"
 debug = true
@@ -36,6 +36,7 @@ keyspace = "rabbictyl"
 
 [cache]
 # memory | redis
+# Redis is recommended over memory
 driver = "memory"
 connection_string = ""
 
@@ -70,7 +71,7 @@ encryption = "starttls"
 username = ""
 password = ""
 from_address = ""
-from_name = "RabbiCtyl"
+from_name = "Rabbict_yl"
 timeout_seconds = 15
 
 [themes]

@@ -1,0 +1,613 @@
+@model IReadOnlyList<GameTemplate>
+@{
+    ViewData["Title"] = L["admin.games"].ToString();
+}
+
+<section class="page">
+    <header class="page__header">
+        <div>
+            <span class="eyebrow">@L["admin.eyebrow"]</span>
+            <h1 class="page__title">@L["admin.games"]</h1>
+            <p class="page__subtitle">@L["admin.games.subtitle"]</p>
+        </div>
+    </header>
+
+    <partial name="_AdminTabs" />
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert--success" role="status">@success</div>
+    }
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert--danger" role="alert">@error</div>
+    }
+
+    <p class="form__hint">@L["admin.games.nestHint"]</p>
+
+    <details class="card admin-create" @(Model.Count == 0 ? "open" : null)>
+        <summary class="admin-create__summary">
+            <span>
+                <strong>@L["admin.games.create"]</strong>
+                <span class="admin-create__hint">@L["admin.games.createHint"]</span>
+            </span>
+            <span class="button button--primary button--sm">@L["admin.games.create"]</span>
+        </summary>
+        <div class="admin-create__body">
+            <form method="post" asp-controller="Admin" asp-action="CreateGame" class="form">
+                <div class="admin-create__grid">
+                    <div class="form__group">
+                        <label class="form__label" for="game-name">@L["admin.games.name"]</label>
+                        <input class="form__input" id="game-name" name="Name" required maxlength="191" placeholder="Minecraft Java" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="game-author">@L["admin.games.author"]</label>
+                        <input class="form__input" id="game-author" name="Author" maxlength="191" placeholder="Rabbict_yl" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="game-image">@L["server.startup.image"]</label>
+                        <input class="form__input" id="game-image" name="Image" required maxlength="255" value="ghcr.io/pterodactyl/yolks:java_21" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="game-description">@L["admin.games.description"]</label>
+                        <input class="form__input" id="game-description" name="Description" maxlength="1024" />
+                    </div>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__label" for="game-startup">@L["server.startup.command"]</label>
+                    <input class="form__input" id="game-startup" name="Startup" required maxlength="1024" value="java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}" />
+                </div>
+
+                <div class="admin-create__grid">
+                    <div class="form__group">
+                        <label class="form__label" for="game-done">@L["admin.games.done"]</label>
+                        <textarea class="form__input" id="game-done" name="DonePatterns" rows="3" placeholder="regex:.*Done.*"></textarea>
+                        <span class="form__hint">@L["admin.games.doneHint"]</span>
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="game-stop">@L["admin.games.stop"]</label>
+                        <input class="form__input" id="game-stop" name="StopValue" maxlength="64" value="stop" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="game-script-container">@L["admin.games.scriptContainer"]</label>
+                        <input class="form__input" id="game-script-container" name="ScriptContainer" maxlength="255" value="ghcr.io/pterodactyl/installers:alpine" />
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="game-script-entrypoint">@L["admin.games.scriptEntrypoint"]</label>
+                        <input class="form__input" id="game-script-entrypoint" name="ScriptEntrypoint" maxlength="255" value="ash" />
+                    </div>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__label" for="game-variables">@L["admin.games.variables"]</label>
+                    <textarea class="form__input" id="game-variables" name="Variables" rows="4" placeholder="SERVER_JARFILE=server.jar&#10;JAVA_VERSION=21"></textarea>
+                    <span class="form__hint">@L["admin.games.variablesHint"]</span>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__label" for="game-install">@L["admin.games.installScript"]</label>
+                    <textarea class="form__input" id="game-install" name="InstallScript" rows="6" spellcheck="false" placeholder="#!/bin/ash&#10;apk add --no-cache curl&#10;curl -o server.jar https://example.com/server.jar"></textarea>
+                </div>
+
+                <div class="admin-create__actions">
+                    <button type="submit" class="button button--primary">@L["admin.games.create"]</button>
+                </div>
+            </form>
+        </div>        </details>
+
+    <details class="card admin-create">
+        <summary class="admin-create__summary">
+            <span>
+                <strong>Import from URL</strong>
+                <span class="admin-create__hint">Fetch a nest file from one URL, or many at once from a JSON list of URLs.</span>
+            </span>
+            <span class="button button--primary button--sm">Import</span>
+        </summary>
+        <div class="admin-create__body">
+            <div class="admin-create__grid">
+                <div class="form__group">
+                    <label class="form__label" for="nest-import-url">Single URL</label>
+                    <input class="form__input" id="nest-import-url" type="url" placeholder="https://example.com/nests/minecraft-paper.toml" />
+                </div>
+                <div class="form__group">
+                    <label class="form__label" for="nest-import-urls">Bulk import (JSON array of URLs)</label>
+                    <textarea class="form__input" id="nest-import-urls" rows="4" spellcheck="false" placeholder='["https://example.com/nests/a.toml","https://example.com/nests/b.toml"]'></textarea>
+                    <span class="form__hint">Paste a JSON array of URL strings. Every URL is fetched and listed for confirmation before anything is written.</span>
+                </div>
+            </div>
+            <div class="admin-create__actions">
+                <button type="button" class="button button--primary" id="nest-import-preview">Preview import</button>
+                <span class="form__hint" id="nest-import-error" role="alert"></span>
+            </div>
+        </div>
+    </details>
+
+    <details class="card admin-create">
+        <summary class="admin-create__summary">
+            <span>
+                <strong>Nests on disk</strong>
+                <span class="admin-create__hint">Every nest file in the nests folder with its file version. Deleting a file removes its eggs from the panel.</span>
+            </span>
+            <span class="button button--ghost button--sm">Manage</span>
+        </summary>
+        <div class="admin-create__body">
+            <div id="nest-files" style="display:grid; gap:8px;"></div>
+            <span class="form__hint" id="nest-files-error" role="alert"></span>
+        </div>
+    </details>
+
+    <section class="card card--flush">
+        @if (Model.Count == 0)
+        {
+            <div class="empty">
+                <p class="empty__title">@L["admin.games.empty"]</p>
+                <p class="empty__hint">@L["admin.games.emptyHint"]</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>@L["admin.games.name"]</th>
+                            <th>@L["admin.games.source"]</th>
+                            <th>@L["server.startup.image"]</th>
+                            <th class="table__number">@L["admin.games.variablesCount"]</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var template in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="table__primary">@template.Egg.Name</span>
+                                <span class="table__secondary">@(string.IsNullOrWhiteSpace(template.Egg.Description) ? template.Egg.Uuid.ToString() : template.Egg.Description)</span>
+                                @if (template.EditedAt is { } editedAt)
+                                {
+                                    <span class="table__secondary">
+                                        <time datetime="@editedAt.ToString("O")">@L["admin.games.edited"] @editedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</time>
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                @if (template.FromNest)
+                                {
+                                    <span class="badge">@L["admin.games.fromNest"] @template.NestName</span>
+                                }
+                                else
+                                {
+                                    <span class="badge">@L["admin.games.fromPanel"]</span>
+                                }
+                            </td>
+                            <td><code>@EggTemplate.Image(template.Egg)</code></td>
+                            <td class="table__number">@EggTemplate.Variables(template.Egg).Count</td>
+                            <td>
+                                <div class="table__actions">
+                                    <details class="node-config">
+                                        <summary class="button button--ghost button--sm">@L["admin.games.edit"]</summary>
+                                        <div class="node-config__body">
+                                            @if (template.FromNest)
+                                            {
+                                                <div class="alert alert--warning" role="status">@L["admin.games.nestEditWarning"]</div>
+                                            }
+                                            <form method="post" asp-controller="Admin" asp-action="UpdateGame" asp-route-uuid="@template.Egg.Uuid" class="form">
+                                                <div class="admin-create__grid">
+                                                    <div class="form__group">
+                                                        <label class="form__label" for="edit-game-name-@template.Egg.Uuid">@L["admin.games.name"]</label>
+                                                        <input class="form__input" id="edit-game-name-@template.Egg.Uuid" name="Name" value="@template.Egg.Name" required maxlength="191" />
+                                                    </div>
+                                                    <div class="form__group">
+                                                        <label class="form__label" for="edit-game-author-@template.Egg.Uuid">@L["admin.games.author"]</label>
+                                                        <input class="form__input" id="edit-game-author-@template.Egg.Uuid" name="Author" value="@template.Egg.Author" maxlength="191" />
+                                                    </div>
+                                                    <div class="form__group">
+                                                        <label class="form__label" for="edit-game-image-@template.Egg.Uuid">@L["server.startup.image"]</label>
+                                                        <input class="form__input" id="edit-game-image-@template.Egg.Uuid" name="Image" value="@EggTemplate.Image(template.Egg)" required maxlength="255" />
+                                                    </div>
+                                                    <div class="form__group" style="grid-column: 1 / -1;">
+                                                        <span class="form__label">Images</span>
+                                                        @{
+                                                            var primaryImage = EggTemplate.Image(template.Egg);
+                                                            var extraImages = EggTemplate.Images(template.Egg)
+                                                                .Where(pair => !string.Equals(pair.Key, "default", StringComparison.Ordinal)
+                                                                    && !string.Equals(pair.Value, primaryImage, StringComparison.Ordinal))
+                                                                .ToList();
+                                                        }
+                                                        @if (extraImages.Count == 0)
+                                                        {
+                                                            <span class="form__hint">No extra images. The image above is the only choice.</span>
+                                                        }
+                                                        @foreach (var pair in extraImages)
+                                                        {
+                                                            <div class="egg-image-row" style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
+                                                                <input class="form__input" type="text" name="ImageNames" value="@pair.Key" maxlength="191" required placeholder="Name of image" aria-label="Image name" style="flex:1; min-width:0;" />
+                                                                <input class="form__input" type="text" name="Images" value="@pair.Value" maxlength="255" required placeholder="registry/image:tag" aria-label="Image" style="flex:2; min-width:0;" />
+                                                                <button type="button" class="button button--ghost button--sm egg-image-row__delete">Delete</button>
+                                                            </div>
+                                                        }
+                                                        <span class="form__hint">Extra images offered when creating a server — edit their name or image in place, or delete the row. The image above stays the default.</span>
+                                                    </div>
+                                                    <div class="form__group">
+                                                        <label class="form__label" for="edit-game-description-@template.Egg.Uuid">@L["admin.games.description"]</label>
+                                                        <input class="form__input" id="edit-game-description-@template.Egg.Uuid" name="Description" value="@template.Egg.Description" maxlength="1024" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="form__group">
+                                                    <label class="form__label" for="edit-game-startup-@template.Egg.Uuid">@L["server.startup.command"]</label>
+                                                    <input class="form__input" id="edit-game-startup-@template.Egg.Uuid" name="Startup" value="@template.Egg.StartupCommand" required maxlength="1024" />
+                                                </div>
+
+                                                <div class="admin-create__actions">
+                                                    <button type="submit" class="button button--primary button--sm">@L["admin.games.save"]</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </details>
+
+                                    @if (!template.FromNest)
+                                    {
+                                        <form method="post" asp-controller="Admin" asp-action="DeleteGame" asp-route-uuid="@template.Egg.Uuid" class="inline-form">
+                                            <button type="submit" class="button button--ghost button--sm">@L["admin.games.delete"]</button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <div id="nest-import-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; padding:16px; align-items:center; justify-content:center;">
+        <div class="card" style="width:min(720px,100%); max-height:88vh; overflow:auto;">
+            <div class="card__header" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <h2 class="card__title">Import nests</h2>
+                <button type="button" class="button button--ghost button--sm" id="nest-import-close">Close</button>
+            </div>
+            <div class="alert alert--warning" id="nest-import-warnings" role="alert" style="margin-top:8px; display:none;"></div>
+            <div id="nest-import-list" style="display:grid; gap:8px; margin-top:12px;"></div>
+            <div id="nest-import-progress" style="display:none; margin-top:14px;">
+                <span class="form__hint" id="nest-import-progress-text">Importing…</span>
+                <div style="height:8px; border-radius:999px; background:rgba(127,127,127,.25); margin-top:6px; overflow:hidden;">
+                    <div id="nest-import-progress-bar" style="height:100%; width:0%; background:#4a9eff; transition:width .2s;"></div>
+                </div>
+            </div>
+            <div class="admin-create__actions" style="display:flex; gap:8px; margin-top:16px;">
+                <button type="button" class="button button--primary" id="nest-import-continue" style="display:none;">Continue</button>
+                <button type="button" class="button button--primary" id="nest-import-done" style="display:none;">Refresh page</button>
+                <button type="button" class="button button--ghost" id="nest-import-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            "use strict";
+
+            const byId = (id) => document.getElementById(id);
+            const modal = byId("nest-import-modal");
+            const list = byId("nest-import-list");
+            const warnings = byId("nest-import-warnings");
+            const error = byId("nest-import-error");
+            const continueButton = byId("nest-import-continue");
+            const doneButton = byId("nest-import-done");
+            const progress = byId("nest-import-progress");
+            const progressText = byId("nest-import-progress-text");
+            const progressBar = byId("nest-import-progress-bar");
+
+            let batchId = null;
+            let stream = null;
+            let rows = [];
+            let total = 0;
+            let finished = 0;
+
+            const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value || "";
+
+            async function post(url, body) {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": token() },
+                    body: JSON.stringify(body),
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(data.error || `Request failed (HTTP ${response.status})`);
+                }
+                return data;
+            }
+
+            function showWarnings(message) {
+                warnings.textContent = message;
+                warnings.style.display = message ? "" : "none";
+            }
+
+            function closeModal() {
+                modal.style.display = "none";
+                if (stream) {
+                    stream.close();
+                    stream = null;
+                }
+            }
+
+            function renderRows(items) {
+                list.innerHTML = "";
+                rows = items.map((item) => {
+                    const row = document.createElement("div");
+                    row.style.cssText = "border:1px solid rgba(127,127,127,.3); border-radius:8px; padding:10px 12px; display:flex; gap:10px; align-items:flex-start;";
+
+                    const badge = document.createElement("span");
+                    badge.className = "badge";
+                    badge.textContent = item.ok ? "ready" : "error";
+
+                    const body = document.createElement("div");
+                    const url = document.createElement("div");
+                    url.style.cssText = "font-weight:600; word-break:break-all;";
+                    url.textContent = item.url;
+
+                    const meta = document.createElement("div");
+                    meta.className = "form__hint";
+                    meta.style.margin = "0";
+                    meta.textContent = item.ok
+                        ? `${item.nestId || "(no id)"} · ${item.eggCount} egg(s): ${(item.eggs || []).join(", ")} → nests/${item.targetFile}`
+                            + (item.conflict ? " · replaces an existing file" : "")
+                            + (item.duplicate ? " · same target as another URL in this batch" : "")
+                        : (item.error || "Could not load this URL");
+
+                    body.append(url, meta);
+                    row.append(badge, body);
+                    list.append(row);
+
+                    return { badge, meta, state: item.ok ? "ready" : "error" };
+                });
+            }
+
+            async function preview() {
+                error.textContent = "";
+                showWarnings("");
+                continueButton.style.display = "none";
+                doneButton.style.display = "none";
+                progress.style.display = "none";
+
+                const bulk = byId("nest-import-urls").value.trim();
+                const single = byId("nest-import-url").value.trim();
+                let urls = [];
+
+                if (bulk) {
+                    try {
+                        const parsed = JSON.parse(bulk);
+                        if (!Array.isArray(parsed) || parsed.some((entry) => typeof entry !== "string")) {
+                            throw new Error("not an array of strings");
+                        }
+                        urls = parsed.map((entry) => entry.trim()).filter(Boolean);
+                    } catch {
+                        error.textContent = 'Bulk import expects a JSON array of URL strings, e.g. ["https://…/nest.toml"].';
+                        return;
+                    }
+                }
+
+                if (single) {
+                    urls.push(single);
+                }
+
+                urls = [...new Set(urls)];
+
+                if (urls.length === 0) {
+                    error.textContent = "Enter a URL or paste a JSON array of URLs.";
+                    return;
+                }
+
+                modal.style.display = "flex";
+                list.innerHTML = `<div class="form__hint">Fetching and checking ${urls.length} URL(s)…</div>`;
+
+                try {
+                    const data = await post("/admin/games/import/preview", { urls });
+                    batchId = data.batchId;
+                    showWarnings((data.warnings || []).join(" "));
+                    renderRows(data.items || []);
+                    total = (data.items || []).filter((item) => item.ok).length;
+
+                    if (total > 0) {
+                        continueButton.style.display = "";
+                    } else {
+                        showWarnings("None of these URLs could be imported. " + (data.warnings || []).join(" "));
+                    }
+                } catch (exception) {
+                    list.innerHTML = "";
+                    showWarnings(exception.message);
+                }
+            }
+
+            async function startImport() {
+                if (!batchId) {
+                    return;
+                }
+
+                continueButton.style.display = "none";
+                showWarnings("");
+
+                try {
+                    const data = await post("/admin/games/import/start", { batchId });
+                    beginStream(data.jobId);
+                } catch (exception) {
+                    showWarnings(exception.message);
+                    continueButton.style.display = "";
+                }
+            }
+
+            function beginStream(jobId) {
+                finished = 0;
+                progress.style.display = "";
+                progressText.textContent = `Importing 0 / ${total}…`;
+                progressBar.style.width = "0%";
+
+                stream = new EventSource(`/admin/games/import/stream?jobId=${encodeURIComponent(jobId)}`);
+
+                stream.addEventListener("item", (event) => {
+                    const item = JSON.parse(event.data);
+                    const row = rows[item.index];
+
+                    if (!row) {
+                        return;
+                    }
+
+                    row.badge.textContent = item.state;
+                    row.badge.className = item.state === "done"
+                        ? "badge badge--running"
+                        : item.state === "failed"
+                            ? "badge badge--stopping"
+                            : "badge badge--starting";
+                    row.meta.textContent = item.detail || row.meta.textContent;
+
+                    if (item.state === "done" || item.state === "failed") {
+                        finished += 1;
+                        progressText.textContent = `Imported ${finished} / ${total}…`;
+                        progressBar.style.width = `${Math.round((finished / Math.max(total, 1)) * 100)}%`;
+                    }
+                });
+
+                stream.addEventListener("done", (event) => {
+                    const data = JSON.parse(event.data);
+                    stream.close();
+                    stream = null;
+                    progressText.textContent = `Finished: ${data.imported} imported, ${data.failed} failed.`;
+                    progressBar.style.width = "100%";
+                    doneButton.style.display = "";
+                });
+
+                stream.addEventListener("error", (event) => {
+                    // Server-sent `error` events carry data; transport hiccups do not.
+                    if (event.data) {
+                        const data = JSON.parse(event.data);
+                        showWarnings(data.message || "The import reported an error.");
+                    }
+                });
+            }
+
+            byId("nest-import-preview").addEventListener("click", preview);
+            continueButton.addEventListener("click", startImport);
+            doneButton.addEventListener("click", () => window.location.reload());
+            byId("nest-import-cancel").addEventListener("click", closeModal);
+            byId("nest-import-close").addEventListener("click", closeModal);
+            modal.addEventListener("click", (event) => {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape" && modal.style.display !== "none") {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
+
+    <script>
+        (() => {
+            "use strict";
+
+            const container = document.getElementById("nest-files");
+            const error = document.getElementById("nest-files-error");
+            if (!container) {
+                return;
+            }
+
+            const token = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value || "";
+
+            function row(file) {
+                const item = document.createElement("div");
+                item.style.cssText = "border:1px solid rgba(127,127,127,.3); border-radius:8px; padding:10px 12px; display:flex; gap:10px; align-items:center; justify-content:space-between;";
+
+                const body = document.createElement("div");
+                const title = document.createElement("div");
+                title.style.fontWeight = "600";
+                title.textContent = file.file;
+                const meta = document.createElement("div");
+                meta.className = "form__hint";
+                meta.style.margin = "0";
+                meta.textContent = file.error
+                    ? `Unreadable: ${file.error}`
+                    : `${file.nestId || "(no id)"} · ${file.nestName || ""} · version ${file.version || "—"} · ${file.eggCount} egg(s)`;
+
+                body.append(title, meta);
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "button button--ghost button--sm";
+                button.textContent = "Delete";
+                button.addEventListener("click", async () => {
+                    if (!window.confirm(`Delete nests/${file.file}?\n\nIts eggs disappear from the panel. Servers created from it keep running.`)) {
+                        return;
+                    }
+
+                    error.textContent = "";
+                    button.disabled = true;
+
+                    try {
+                        const response = await fetch("/admin/games/nests/delete", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": token() },
+                            body: JSON.stringify({ file: file.file }),
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                            throw new Error(data.error || `Request failed (HTTP ${response.status})`);
+                        }
+                        await load();
+                    } catch (exception) {
+                        error.textContent = exception.message;
+                        button.disabled = false;
+                    }
+                });
+
+                item.append(body, button);
+                return item;
+            }
+
+            async function load() {
+                error.textContent = "";
+
+                try {
+                    const response = await fetch("/admin/games/nests/list", { headers: { "Accept": "application/json" } });
+                    if (!response.ok) {
+                        throw new Error(`Request failed (HTTP ${response.status})`);
+                    }
+
+                    const data = await response.json();
+                    container.innerHTML = "";
+
+                    if (!data.nests || data.nests.length === 0) {
+                        container.innerHTML = '<div class="form__hint">No nest files found in the nests folder.</div>';
+                        return;
+                    }
+
+                    data.nests.forEach((file) => container.append(row(file)));
+                } catch (exception) {
+                    error.textContent = exception.message;
+                }
+            }
+
+            load();
+        })();
+    </script>
+
+    <script>
+        // Delete buttons in the egg edit dialog drop their image row; the form
+        // only submits the rows that are still in the DOM.
+        document.addEventListener("click", (event) => {
+            const button = event.target.closest(".egg-image-row__delete");
+            if (button) {
+                const row = button.closest(".egg-image-row");
+                if (row) {
+                    row.remove();
+                }
+            }
+        });
+    </script>
+</section>

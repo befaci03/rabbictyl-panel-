@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "packageManager": "bun@1.4.2",
-  "description": "Build pipeline for the RabbiCtyl panel shell, themes and addons.",
+  "description": "Build pipeline for the Rabbict_yl panel shell, themes and addons.",
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:prod": "node scripts/build.mjs --production",

@@ -1,0 +1,35 @@
+version = "1.00"
+# Minecraft: Pumpkin, a Minecraft: Java Edition server written in Rust.
+
+id = "minecraft-pumpkinmc"
+name = "Minecraft PumpkinMC"
+author = "Rabbictyl"
+description = "PumpkinMC servers (Rust)"
+
+[[egg]]
+id = "pumpkinmc"
+name = "Minecraft PumpkinMC"
+description = "Pumpkin, the fast Minecraft server written from scratch in Rust."
+docker_image = "ghcr.io/pterodactyl/yolks:debian"
+startup = "./pumpkin"
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl
+base="https://github.com/Pumpkin-MC/Pumpkin/releases/latest/download"
+for asset in pumpkin-x86_64-Linux pumpkin-x86_64-linux pumpkin-x86_64-unknown-linux-gnu; do
+  if curl -fsfLo pumpkin "${base}/${asset}"; then
+    chmod +x pumpkin
+    echo "Installed Pumpkin (${asset})"
+    exit 0
+  fi
+done
+echo "Could not download a Pumpkin release asset" >&2
+exit 1
+"""
+
+[egg.variables]

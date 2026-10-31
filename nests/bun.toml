@@ -1,0 +1,29 @@
+version = "1.00"
+id = "bun"
+name = "Bun"
+author = "Rabbictyl"
+description = "Bun JavaScript/TypeScript runtime"
+
+[[egg]]
+id = "bun"
+name = "Bun"
+description = "Runs a Bun entry script. Installs dependencies from package.json during setup."
+docker_image = "oven/bun:1.4"
+startup = "bun {{MAIN_FILE}}"
+script_container = "oven/bun:1.4"
+script_entrypoint = "sh"
+script_install = """
+#!/bin/sh
+set -e
+if [ -f package.json ]; then
+  bun install
+  echo "Installed dependencies"
+fi
+if [ ! -f "${MAIN_FILE}" ]; then
+  printf 'console.log("Hello from Bun");\\n' > "${MAIN_FILE}"
+  echo "Created ${MAIN_FILE}"
+fi
+"""
+
+[egg.variables]
+MAIN_FILE = "index.ts"

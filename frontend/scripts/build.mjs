@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const frontendRoot = path.resolve(here, "..");
 const repoRoot = path.resolve(frontendRoot, "..");
-const webRoot = path.join(repoRoot, "src", "RabbiCtyl.Web");
+const webRoot = path.join(repoRoot, "src", "Rabbictyl.Web");
 const wwwroot = path.join(webRoot, "wwwroot");
 const themesRoot = path.join(repoRoot, "themes");
 const addonsRoot = path.join(repoRoot, "addons");

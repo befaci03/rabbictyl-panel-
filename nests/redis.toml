@@ -1,0 +1,25 @@
+version = "1.00"
+# Redis server bound to the allocated panel port.
+
+id = "redis"
+name = "Redis"
+author = "Rabbictyl"
+description = "Redis data stores"
+
+[[egg]]
+id = "redis"
+name = "Redis"
+description = "Redis bound to the allocated port. Set REDIS_PASSWORD to require a password (protected mode is disabled so remote clients can connect)."
+docker_image = "redis:8.10"
+startup = "sh -c 'if [ -n \"${REDIS_PASSWORD}\" ]; then exec redis-server --port {{SERVER_PORT}} --bind 0.0.0.0 --protected-mode no --requirepass \"${REDIS_PASSWORD}\"; else exec redis-server --port {{SERVER_PORT}} --bind 0.0.0.0 --protected-mode no; fi'"
+done = ['regex:.*Ready to accept connections']
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+echo "Redis ready"
+"""
+
+[egg.variables]
+REDIS_PASSWORD = ""

@@ -1,0 +1,29 @@
+version = "1.00"
+id = "nodejs"
+name = "Node.js"
+author = "Rabbictyl"
+description = "Node.js applications"
+
+[[egg]]
+id = "nodejs"
+name = "Node.js"
+description = "Runs a Node.js entry script. Runs npm install during setup when package.json exists."
+docker_image = "node:26"
+startup = "node {{MAIN_FILE}}"
+script_container = "node:26"
+script_entrypoint = "sh"
+script_install = """
+#!/bin/sh
+set -e
+if [ -f package.json ]; then
+  npm install --no-audit --no-fund
+  echo "Installed dependencies"
+fi
+if [ ! -f "${MAIN_FILE}" ]; then
+  printf 'console.log("Hello from Node");\\n' > "${MAIN_FILE}"
+  echo "Created ${MAIN_FILE}"
+fi
+"""
+
+[egg.variables]
+MAIN_FILE = "index.js"

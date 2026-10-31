@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Rabbictyl.Addon.OAuth2</AssemblyName>
+    <RootNamespace>Rabbictyl.Addon.OAuth2</RootNamespace>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <!-- Built straight into the addon folder the panel scans at runtime. -->
+    <OutputPath>../../addons/oauth2/lib/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rabbictyl.Addons.Abstractions\Rabbictyl.Addons.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

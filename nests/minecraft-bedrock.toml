@@ -1,0 +1,84 @@
+version = "1.00"
+# Minecraft: Bedrock Edition servers (BDS, PocketMine-MP and Nukkit).
+
+id = "minecraft-bedrock"
+name = "Minecraft Bedrock"
+author = "Rabbictyl"
+description = "Bedrock Edition servers"
+
+[[egg]]
+id = "bedrock"
+name = "Bedrock Dedicated Server"
+description = "Mojang's official Bedrock Dedicated Server (Ubuntu image, port patched on boot)."
+docker_image = "ubuntu:24.04"
+startup = "sh -c 'ldd ./bedrock_server 2>/dev/null | grep -q \"not found\" && { apt-get update -qq >/dev/null 2>&1; apt-get install -y -qq libcurl4t64 libssl3t64 zlib1g >/dev/null 2>&1; }; case \"{{SERVER_PORT}}\" in *[!0-9]*) ;; *) sed -i \"s/^server-port=.*/server-port={{SERVER_PORT}}/\" server.properties 2>/dev/null ;; esac; LD_LIBRARY_PATH=. exec ./bedrock_server'"
+done = ['regex:.*Server started']
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl unzip
+url="https://www.minecraft.net/bin-linux/bedrock-server-${BDS_VERSION}.zip"
+if ! curl -fsSL -o bds.zip "${url}"; then
+  curl -fsSL -o bds.zip "https://minecraft.azureedge.net/bin-linux/bedrock-server-${BDS_VERSION}.zip"
+fi
+unzip -o -q bds.zip
+rm -f bds.zip
+chmod +x bedrock_server
+echo "Installed Bedrock Dedicated Server ${BDS_VERSION}"
+"""
+
+[egg.variables]
+BDS_VERSION = "26.60"
+
+[[egg]]
+id = "pocketmine"
+name = "PocketMine-MP"
+description = "PocketMine-MP, the original PHP server software for Bedrock Edition."
+docker_image = "debian:12"
+startup = "sh -c 'case \"{{SERVER_PORT}}\" in *[!0-9]*) ;; *) sed -i \"s/^server-port=.*/server-port={{SERVER_PORT}}/\" server.properties 2>/dev/null ;; esac; p=$(find bin -type f -name php 2>/dev/null | head -n 1); if [ -z \"$p\" ]; then echo \"PHP runtime missing, re-run the install script\" >&2; exit 1; fi; exec \"$p\" PocketMine-MP.phar --no-wizard'"
+done = ['regex:.*Done \(.*\)!']
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl tar
+curl -fsSL -o pm.tar.gz "https://github.com/pmmp/PHP-Binaries/releases/download/pm5-php-8.4-latest/PHP-8.4-Linux-x86_64-PM5.tar.gz"
+tar -xzf pm.tar.gz
+rm -f pm.tar.gz
+curl -fsSL -o PocketMine-MP.phar "https://github.com/pmmp/PocketMine-MP/releases/latest/download/PocketMine-MP.phar"
+if [ ! -f server.properties ]; then
+  printf 'motd=PocketMine-MP\nserver-port=19132\nenable-rcon=false\n' > server.properties
+fi
+echo "Installed PocketMine-MP with bundled PHP"
+"""
+
+[egg.variables]
+
+[[egg]]
+id = "nukkit"
+name = "Nukkit"
+description = "Nukkit, the Java-based server software for Bedrock Edition."
+docker_image = "ghcr.io/pterodactyl/yolks:java_21"
+startup = "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
+done = ['regex:.*Done \(.*\)!']
+stop_type = "command"
+stop_value = "stop"
+script_container = "ghcr.io/pterodactyl/installers:alpine"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+apk add --no-cache curl
+curl -fsSL -o "${SERVER_JARFILE}" "https://repo.opencollab.dev/api/maven/latest/file/maven-snapshots/cn/nukkit/nukkit/1.0-SNAPSHOT?extension=jar"
+echo "Installed ${SERVER_JARFILE}"
+"""
+
+[egg.variables]
+SERVER_JARFILE = "server.jar"

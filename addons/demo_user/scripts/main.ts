@@ -24,8 +24,8 @@ interface SimulatedServer {
 type ServerStatus = "Running" | "Starting" | "Stopping" | "Offline";
 
 const addons = (window as unknown as {
-  RabbiCtyl: { forAddon(id: string): { json<T>(path: string): Promise<T>; ready(cb: () => void): void } };
-}).RabbiCtyl;
+  Rabbictyl: { forAddon(id: string): { json<T>(path: string): Promise<T>; ready(cb: () => void): void } };
+}).Rabbictyl;
 
 const api = addons.forAddon("demo_user");
 

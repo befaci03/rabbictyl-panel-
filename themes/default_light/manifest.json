@@ -3,7 +3,7 @@
   "name": "Default Light",
   "version": "1.0.0",
   "description": "A bright, high-contrast variant of the default theme.",
-  "author": "RabbiCtyl",
+  "author": "Rabbict_yl",
   "styles": [
     "styles/theme.scss",
     "styles/animations.css"

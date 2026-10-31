@@ -1,0 +1,137 @@
+version = "1.00"
+# VPS-style servers: a bare distro image plus a custom start.sh you write yourself.
+# The install script seeds start.sh once; edit it in the file manager to run
+# anything you like. Each egg only differs by the base distro image.
+
+id = "vps"
+name = "VPS"
+author = "Rabbictyl"
+description = "Custom Linux servers driven by your own start.sh"
+
+[[egg]]
+id = "alpine"
+name = "VPS - Alpine"
+description = "Alpine Linux container. Customise /home/container/start.sh to run anything."
+docker_image = "alpine:3.20"
+startup = "sh /home/container/start.sh {{SERVER_PORT}}"
+script_container = "alpine:3.20"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+if [ -f start.sh ]; then
+  echo "start.sh already exists, keeping your version"
+else
+  cat > start.sh <<'VPSEOF'
+#!/bin/sh
+# Custom VPS entrypoint. $1 is the allocated server port when the panel
+# substitutes {{SERVER_PORT}}; non-numeric values fall back to PORT below.
+PORT="${1:-25565}"
+case "$PORT" in *[!0-9]*) PORT=25565 ;; esac
+echo "VPS container up, allocated port: ${PORT}"
+# Replace this loop with whatever you want the server to run, e.g.:
+#   ./my-binary --port "${PORT}"
+while :; do sleep 3600; done
+VPSEOF
+  chmod +x start.sh
+  echo "Created start.sh - edit it to run whatever you need"
+fi
+"""
+
+[egg.variables]
+
+[[egg]]
+id = "ubuntu"
+name = "VPS - Ubuntu"
+description = "Ubuntu container. Customise /home/container/start.sh to run anything."
+docker_image = "ubuntu:24.04"
+startup = "sh /home/container/start.sh {{SERVER_PORT}}"
+script_container = "alpine:3.20"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+if [ -f start.sh ]; then
+  echo "start.sh already exists, keeping your version"
+else
+  cat > start.sh <<'VPSEOF'
+#!/bin/sh
+# Custom VPS entrypoint. $1 is the allocated server port when the panel
+# substitutes {{SERVER_PORT}}; non-numeric values fall back to PORT below.
+PORT="${1:-25565}"
+case "$PORT" in *[!0-9]*) PORT=25565 ;; esac
+echo "VPS container up, allocated port: ${PORT}"
+# Replace this loop with whatever you want the server to run, e.g.:
+#   ./my-binary --port "${PORT}"
+while :; do sleep 3600; done
+VPSEOF
+  chmod +x start.sh
+  echo "Created start.sh - edit it to run whatever you need"
+fi
+"""
+
+[egg.variables]
+
+[[egg]]
+id = "debian"
+name = "VPS - Debian"
+description = "Debian container. Customise /home/container/start.sh to run anything."
+docker_image = "debian:12"
+startup = "sh /home/container/start.sh {{SERVER_PORT}}"
+script_container = "alpine:3.20"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+if [ -f start.sh ]; then
+  echo "start.sh already exists, keeping your version"
+else
+  cat > start.sh <<'VPSEOF'
+#!/bin/sh
+# Custom VPS entrypoint. $1 is the allocated server port when the panel
+# substitutes {{SERVER_PORT}}; non-numeric values fall back to PORT below.
+PORT="${1:-25565}"
+case "$PORT" in *[!0-9]*) PORT=25565 ;; esac
+echo "VPS container up, allocated port: ${PORT}"
+# Replace this loop with whatever you want the server to run, e.g.:
+#   ./my-binary --port "${PORT}"
+while :; do sleep 3600; done
+VPSEOF
+  chmod +x start.sh
+  echo "Created start.sh - edit it to run whatever you need"
+fi
+"""
+
+[egg.variables]
+
+[[egg]]
+id = "arch"
+name = "VPS - Arch Linux"
+description = "Arch Linux container. Customise /home/container/start.sh to run anything."
+docker_image = "archlinux:latest"
+startup = "sh /home/container/start.sh {{SERVER_PORT}}"
+script_container = "alpine:3.20"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+if [ -f start.sh ]; then
+  echo "start.sh already exists, keeping your version"
+else
+  cat > start.sh <<'VPSEOF'
+#!/bin/sh
+# Custom VPS entrypoint. $1 is the allocated server port when the panel
+# substitutes {{SERVER_PORT}}; non-numeric values fall back to PORT below.
+PORT="${1:-25565}"
+case "$PORT" in *[!0-9]*) PORT=25565 ;; esac
+echo "VPS container up, allocated port: ${PORT}"
+# Replace this loop with whatever you want the server to run, e.g.:
+#   ./my-binary --port "${PORT}"
+while :; do sleep 3600; done
+VPSEOF
+  chmod +x start.sh
+  echo "Created start.sh - edit it to run whatever you need"
+fi
+"""
+
+[egg.variables]

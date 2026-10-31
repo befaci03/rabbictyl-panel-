@@ -12,7 +12,6 @@ trim_trailing_whitespace = true
 indent_size = 2
 
 [*.cs]
-indent_size = 4
 dotnet_sort_system_directives_first = true
 csharp_new_line_before_open_brace = all
 csharp_style_namespace_declarations = file_scoped:warning

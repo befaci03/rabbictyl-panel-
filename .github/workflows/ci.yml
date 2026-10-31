@@ -25,14 +25,14 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore RabbiCtyl.sln
+        run: dotnet restore Rabbictyl.sln
 
       - name: Build
-        run: dotnet build RabbiCtyl.sln --configuration Release --no-restore
+        run: dotnet build Rabbictyl.sln --configuration Release --no-restore
 
       - name: Test
         run: >-
-          dotnet test RabbiCtyl.sln
+          dotnet test Rabbictyl.sln
           --configuration Release
           --no-build
           --logger "console;verbosity=normal"

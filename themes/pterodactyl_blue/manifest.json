@@ -3,7 +3,7 @@
   "name": "Pterodactyl Blue",
   "version": "1.0.0",
   "description": "The Pterodactyl panel palette: slate surfaces, blue accents and compact controls.",
-  "author": "RabbiCtyl",
+  "author": "Rabbict_yl",
   "layout": "pterodactyl",
   "styles": [
     "styles/theme.scss",

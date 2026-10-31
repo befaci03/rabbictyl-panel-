@@ -1,0 +1,84 @@
+version = "1.00"
+# Gitea. The install script seeds start.sh, which writes a persistent app.ini
+# under /home/container/gitea (SQLite, data kept inside the server folder).
+
+id = "gitea"
+name = "Gitea"
+author = "Rabbictyl"
+description = "Self-hosted Git services"
+
+[[egg]]
+id = "gitea"
+name = "Gitea"
+description = "Gitea with SQLite storage under /home/container/gitea. Point GITEA_ROOT_URL at your domain once DNS is set up."
+docker_image = "gitea/gitea:latest"
+startup = "sh /home/container/start.sh {{SERVER_PORT}} {{GITEA_ROOT_URL}}"
+script_container = "alpine:3.20"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+if [ -f start.sh ]; then
+  echo "start.sh already exists, keeping your version"
+else
+  cat > start.sh <<'GITEAEOF'
+#!/bin/sh
+set -e
+PORT="${1:-3000}"
+case "$PORT" in *[!0-9]*) PORT=3000 ;; esac
+ROOT_URL="${2:-http://localhost:3000}"
+mkdir -p /home/container/gitea
+if [ ! -f /home/container/gitea/app.ini ]; then
+  cat > /home/container/gitea/app.ini <<INI
+APP_NAME = Gitea
+RUN_MODE = prod
+
+[repository]
+ROOT = /home/container/gitea/repositories
+
+[repository.local]
+LOCAL_COPY_PATH = /home/container/gitea/data/gitea-repositories
+
+[repository.signing]
+SIGNING_KEY = none
+
+[database]
+DB_TYPE = sqlite3
+PATH = /home/container/gitea/gitea.db
+
+[server]
+APP_DATA_PATH = /home/container/gitea
+HTTP_ADDR = 0.0.0.0
+HTTP_PORT = ${PORT}
+ROOT_URL = ${ROOT_URL}
+LFS_START_SERVER = true
+DISABLE_ROUTER_LOG = true
+
+[log]
+ROOT_PATH = /home/container/gitea/log
+MODE = console
+
+[session]
+PROVIDER = file
+PROVIDER_CONFIG = /home/container/gitea/sessions
+
+[cache]
+ADAPTER = file
+INTERVAL = 60
+HOST = /home/container/gitea/cache
+
+[queue]
+TYPE = level
+INI
+fi
+sed -i "s/^HTTP_PORT = .*/HTTP_PORT = ${PORT}/" /home/container/gitea/app.ini
+sed -i "s#^ROOT_URL = .*#ROOT_URL = ${ROOT_URL}#" /home/container/gitea/app.ini
+exec gitea web --config /home/container/gitea/app.ini
+GITEAEOF
+  chmod +x start.sh
+  echo "Created start.sh; Gitea data will live in /home/container/gitea"
+fi
+"""
+
+[egg.variables]
+GITEA_ROOT_URL = "http://localhost:3000"

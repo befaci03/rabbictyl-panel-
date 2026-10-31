@@ -1,0 +1,126 @@
+@model LoginViewModel
+@inject ICaptchaVerifier Captcha
+@inject PanelOptions PanelOptions
+@{
+    Layout = await ThemeLayouts.ResolveAsync(Context, auth: true);
+    ViewData["Title"] = "Sign in";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+}
+
+<section class="auth">
+    <div class="auth__shell">
+        <aside class="auth__aside">
+            <div class="auth__aside-top">
+                <partial name="_BrandMark" />
+                <span class="brand__text">
+                    <span class="brand__name">@Branding.Current.Name</span>
+                </span>
+            </div>
+
+            <div class="auth__aside-copy">
+                <span class="eyebrow">Control room</span>
+                <p>Sign in to manage servers, nodes and access from a single panel.</p>
+            </div>
+
+            <span class="auth__aside-foot">@Branding.Current.Name panel</span>
+        </aside>
+
+        <div class="auth__form-side">
+            <div class="auth__form-inner">
+                <span class="eyebrow">@L["login.eyebrow"]</span>
+                <h2 class="auth__title">@L["login.title"]</h2>
+                <p class="auth__subtitle">@L["login.subtitle"]</p>
+
+                @if (TempData["Success"] is string success)
+                {
+                    <div class="alert alert--success" role="status">@success</div>
+                }
+
+                @if (TempData["Error"] is string authError)
+                {
+                    <div class="alert alert--danger" role="alert">@authError</div>
+                }
+
+                <form method="post" asp-controller="Auth" asp-action="Login" asp-route-returnUrl="@returnUrl" class="form">
+                    <div asp-validation-summary="ModelOnly" class="alert alert--danger"></div>
+
+                    <div class="form__group">
+                        <label asp-for="Login" class="form__label">@L["login.login"]</label>
+                        <input asp-for="Login" class="form__input" autocomplete="username" autofocus />
+                        <span asp-validation-for="Login" class="form__error"></span>
+                    </div>
+
+                    <div class="form__group">
+                        <label asp-for="Password" class="form__label">@L["login.password"]</label>
+                        <input asp-for="Password" class="form__input" autocomplete="current-password" />
+                        <span asp-validation-for="Password" class="form__error"></span>
+                    </div>
+
+                    <label class="form__check">
+                        <input asp-for="RememberMe" />
+                        <span>@L["login.remember"]</span>
+                    </label>
+
+                    <p class="auth__note auth__note--inline">
+                        <a asp-controller="Auth" asp-action="Forgot">@L["login.forgot"]</a>
+                    </p>
+
+                    @if (Captcha.Required)
+                    {
+                        <div class="form__group captcha" data-captcha-provider="@Captcha.Provider">
+                            <span class="form__label">@L["captcha.label"]</span>
+                            <input type="hidden" asp-for="CaptchaToken" data-captcha-token />
+                            @if (Captcha.Provider == "hcaptcha")
+                            {
+                                <div class="h-captcha" data-sitekey="@Captcha.SiteKey" data-callback="rabbictylCaptchaSolved"></div>
+                            }
+                            else
+                            {
+                                <div class="cf-turnstile" data-sitekey="@Captcha.SiteKey" data-callback="rabbictylCaptchaSolved"></div>
+                            }
+                            <span class="form__hint">@L["captcha.hint"]</span>
+                        </div>
+                    }
+
+                    <button type="submit" class="button button--primary button--block">@L["login.submit"]</button>
+                </form>
+
+                <!-- Sign-in providers are contributed by add-ons. -->
+                <div class="form" data-addon-slot="auth.providers"></div>
+
+                <p class="auth__note">
+                    First run? Sign in with the bootstrap administrator from <code>config/panel.toml</code>.
+                    You will be asked to create your own account.
+                </p>
+
+                @if (PanelOptions.Security.AllowRegistration)
+                {
+                    <p class="auth__note">
+                        @L["register.noAccount"]
+                        <a asp-controller="Auth" asp-action="Register">@L["register.submit"]</a>
+                    </p>
+                }
+
+                @if (Captcha.Required)
+                {
+                    <script>
+                        function rabbictylCaptchaSolved(token) {
+                            var field = document.querySelector('[data-captcha-token]');
+                            if (field) {
+                                field.value = token;
+                            }
+                        }
+                    </script>
+                    if (Captcha.Provider == "hcaptcha")
+                    {
+                        <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+                    }
+                    else
+                    {
+                        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</section>

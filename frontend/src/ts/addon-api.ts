@@ -86,6 +86,6 @@ function forAddon(id: string): AddonInstance {
 
 const api: AddonApi = { forAddon, slot, toast };
 
-(window as unknown as { RabbiCtyl: AddonApi }).RabbiCtyl = api;
+(window as unknown as { Rabbictyl: AddonApi }).Rabbictyl = api;
 
 export default api;

@@ -1,0 +1,14 @@
+{
+  "id": "reg_user",
+  "name": "Register Account",
+  "version": "1.0.0",
+  "description": "Adds a Register Account dialog to the administration area so administrators can create an account from any admin page. It posts to the built-in admin user creation flow with the page's antiforgery token. Enabled by default.",
+  "author": "Rabbict_yl",
+  "enabled": true,
+  "scripts": [
+    "scripts/main.ts"
+  ],
+  "assets": {
+    "icon": "assets/icon.svg"
+  }
+}

@@ -3,10 +3,10 @@
   "name": "Demo User",
   "version": "1.0.0",
   "description": "Creates a demo account (demo / demo) so the panel can be tried without a real sign-up, and simulates two servers in the browser while you are signed in as that account. Nothing is written to nodes, eggs or servers. Configure it in settings.json. Disabled by default.",
-  "author": "RabbiCtyl",
+  "author": "Rabbict_yl",
   "enabled": false,
-  "assembly": "lib/RabbiCtyl.Addon.DemoUser.dll",
-  "entry": "RabbiCtyl.Addon.DemoUser.DemoUserAddon",
+  "assembly": "lib/Rabbictyl.Addon.DemoUser.dll",
+  "entry": "Rabbictyl.Addon.DemoUser.DemoUserAddon",
   "scripts": [
     "scripts/main.ts"
   ],

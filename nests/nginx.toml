@@ -1,0 +1,301 @@
+version = "1.00"
+# nginx with an optional PHP toggle: pick the plain egg for static sites or one
+# of the PHP eggs for nginx + php-fpm. The install script seeds start.sh and the
+# site lives in /home/container; edit start.sh for a custom layout.
+
+id = "nginx"
+name = "nginx"
+author = "Rabbict_yl"
+description = "nginx web servers (with optional PHP)"
+
+[[egg]]
+id = "nginx"
+name = "nginx (no PHP)"
+description = "Plain nginx serving /home/container on the allocated port."
+docker_image = "nginx:1.31-alpine"
+startup = "sh /home/container/start.sh {{SERVER_PORT}}"
+script_container = "alpine:3.20"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+if [ -f start.sh ]; then
+  echo "start.sh already exists, keeping your version"
+else
+  cat > start.sh <<'NGINXEOF'
+#!/bin/sh
+set -e
+PORT="${1:-8080}"
+case "$PORT" in *[!0-9]*) PORT=8080 ;; esac
+mkdir -p /tmp/nginx
+cat > /tmp/nginx/nginx.conf <<'CONF'
+worker_processes 1;
+error_log /dev/stderr warn;
+pid /tmp/nginx/nginx.pid;
+events { worker_connections 1024; }
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    access_log /dev/stdout;
+    client_body_temp_path /tmp/nginx/client_body;
+    proxy_temp_path /tmp/nginx/proxy;
+    fastcgi_temp_path /tmp/nginx/fastcgi;
+    uwsgi_temp_path /tmp/nginx/uwsgi;
+    scgi_temp_path /tmp/nginx/scgi;
+    server {
+        listen __PORT__;
+        server_name _;
+        root /home/container;
+        index index.html index.php;
+        location / {
+            try_files $uri $uri/ =404;
+        }
+    }
+}
+CONF
+sed -i "s/__PORT__/${PORT}/g" /tmp/nginx/nginx.conf
+exec nginx -c /tmp/nginx/nginx.conf -g 'daemon off;'
+NGINXEOF
+  chmod +x start.sh
+  if [ ! -f index.html ]; then
+    printf '<!doctype html>\n<title>nginx</title>\n<h1>It works</h1>\n' > index.html
+  fi
+  echo "Created start.sh and a starter index.html"
+fi
+"""
+
+[egg.variables]
+
+[[egg]]
+id = "nginx_php83"
+name = "nginx + PHP 8.3"
+description = "nginx with PHP 8.3 (php-fpm) serving /home/container on the allocated port."
+docker_image = "webdevops/php-nginx:8.3"
+startup = "sh /home/container/start.sh {{SERVER_PORT}}"
+script_container = "alpine:3.20"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+if [ -f start.sh ]; then
+  echo "start.sh already exists, keeping your version"
+else
+  cat > start.sh <<'NGINXEOF'
+#!/bin/sh
+set -e
+PORT="${1:-8080}"
+case "$PORT" in *[!0-9]*) PORT=8080 ;; esac
+mkdir -p /tmp/nginx
+cat > /tmp/nginx/php-fpm.conf <<'FPM'
+[global]
+error_log = /proc/self/fd/2
+daemonize = no
+[www]
+listen = 127.0.0.1:9000
+pm = dynamic
+pm.max_children = 10
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+user = www-data
+group = www-data
+FPM
+cat > /tmp/nginx/nginx.conf <<'CONF'
+worker_processes 1;
+error_log /dev/stderr warn;
+pid /tmp/nginx/nginx.pid;
+events { worker_connections 1024; }
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    access_log /dev/stdout;
+    client_body_temp_path /tmp/nginx/client_body;
+    proxy_temp_path /tmp/nginx/proxy;
+    fastcgi_temp_path /tmp/nginx/fastcgi;
+    uwsgi_temp_path /tmp/nginx/uwsgi;
+    scgi_temp_path /tmp/nginx/scgi;
+    server {
+        listen __PORT__;
+        server_name _;
+        root /home/container;
+        index index.html index.php;
+        location / {
+            try_files $uri $uri/ =404;
+        }
+        location ~ \\.php$ {
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_pass 127.0.0.1:9000;
+        }
+    }
+}
+CONF
+sed -i "s/__PORT__/${PORT}/g" /tmp/nginx/nginx.conf
+php-fpm -F -y /tmp/nginx/php-fpm.conf &
+exec nginx -c /tmp/nginx/nginx.conf -g 'daemon off;'
+NGINXEOF
+  chmod +x start.sh
+  if [ ! -f index.php ]; then
+    printf '<?php phpinfo();\n' > index.php
+  fi
+  echo "Created start.sh and a starter index.php"
+fi
+"""
+
+[egg.variables]
+
+[[egg]]
+id = "nginx_php84"
+name = "nginx + PHP 8.4"
+description = "nginx with PHP 8.4 (php-fpm) serving /home/container on the allocated port."
+docker_image = "webdevops/php-nginx:8.4"
+startup = "sh /home/container/start.sh {{SERVER_PORT}}"
+script_container = "alpine:3.20"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+if [ -f start.sh ]; then
+  echo "start.sh already exists, keeping your version"
+else
+  cat > start.sh <<'NGINXEOF'
+#!/bin/sh
+set -e
+PORT="${1:-8080}"
+case "$PORT" in *[!0-9]*) PORT=8080 ;; esac
+mkdir -p /tmp/nginx
+cat > /tmp/nginx/php-fpm.conf <<'FPM'
+[global]
+error_log = /proc/self/fd/2
+daemonize = no
+[www]
+listen = 127.0.0.1:9000
+pm = dynamic
+pm.max_children = 10
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+user = www-data
+group = www-data
+FPM
+cat > /tmp/nginx/nginx.conf <<'CONF'
+worker_processes 1;
+error_log /dev/stderr warn;
+pid /tmp/nginx/nginx.pid;
+events { worker_connections 1024; }
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    access_log /dev/stdout;
+    client_body_temp_path /tmp/nginx/client_body;
+    proxy_temp_path /tmp/nginx/proxy;
+    fastcgi_temp_path /tmp/nginx/fastcgi;
+    uwsgi_temp_path /tmp/nginx/uwsgi;
+    scgi_temp_path /tmp/nginx/scgi;
+    server {
+        listen __PORT__;
+        server_name _;
+        root /home/container;
+        index index.html index.php;
+        location / {
+            try_files $uri $uri/ =404;
+        }
+        location ~ \\.php$ {
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_pass 127.0.0.1:9000;
+        }
+    }
+}
+CONF
+sed -i "s/__PORT__/${PORT}/g" /tmp/nginx/nginx.conf
+php-fpm -F -y /tmp/nginx/php-fpm.conf &
+exec nginx -c /tmp/nginx/nginx.conf -g 'daemon off;'
+NGINXEOF
+  chmod +x start.sh
+  if [ ! -f index.php ]; then
+    printf '<?php phpinfo();\n' > index.php
+  fi
+  echo "Created start.sh and a starter index.php"
+fi
+"""
+
+[egg.variables]
+
+[[egg]]
+id = "nginx_php85"
+name = "nginx + PHP 8.5"
+description = "nginx with PHP 8.5 (php-fpm) serving /home/container on the allocated port."
+docker_image = "webdevops/php-nginx:8.5"
+startup = "sh /home/container/start.sh {{SERVER_PORT}}"
+script_container = "alpine:3.20"
+script_entrypoint = "ash"
+script_install = """
+#!/bin/ash
+set -e
+if [ -f start.sh ]; then
+  echo "start.sh already exists, keeping your version"
+else
+  cat > start.sh <<'NGINXEOF'
+#!/bin/sh
+set -e
+PORT="${1:-8080}"
+case "$PORT" in *[!0-9]*) PORT=8080 ;; esac
+mkdir -p /tmp/nginx
+cat > /tmp/nginx/php-fpm.conf <<'FPM'
+[global]
+error_log = /proc/self/fd/2
+daemonize = no
+[www]
+listen = 127.0.0.1:9000
+pm = dynamic
+pm.max_children = 10
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+user = www-data
+group = www-data
+FPM
+cat > /tmp/nginx/nginx.conf <<'CONF'
+worker_processes 1;
+error_log /dev/stderr warn;
+pid /tmp/nginx/nginx.pid;
+events { worker_connections 1024; }
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    access_log /dev/stdout;
+    client_body_temp_path /tmp/nginx/client_body;
+    proxy_temp_path /tmp/nginx/proxy;
+    fastcgi_temp_path /tmp/nginx/fastcgi;
+    uwsgi_temp_path /tmp/nginx/uwsgi;
+    scgi_temp_path /tmp/nginx/scgi;
+    server {
+        listen __PORT__;
+        server_name _;
+        root /home/container;
+        index index.html index.php;
+        location / {
+            try_files $uri $uri/ =404;
+        }
+        location ~ \\.php$ {
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_pass 127.0.0.1:9000;
+        }
+    }
+}
+CONF
+sed -i "s/__PORT__/${PORT}/g" /tmp/nginx/nginx.conf
+php-fpm -F -y /tmp/nginx/php-fpm.conf &
+exec nginx -c /tmp/nginx/nginx.conf -g 'daemon off;'
+NGINXEOF
+  chmod +x start.sh
+  if [ ! -f index.php ]; then
+    printf '<?php phpinfo();\n' > index.php
+  fi
+  echo "Created start.sh and a starter index.php"
+fi
+"""
+
+[egg.variables]

@@ -1,0 +1,29 @@
+@using Rabbictyl.Infrastructure.Extensions
+@inject AddonHost AddonHost
+@{
+    var current = ViewContext.RouteData.Values["action"]?.ToString();
+    var addonSlug = ViewData["AddonSlug"] as string;
+}
+
+<nav class="tabs" aria-label="@L["admin.eyebrow"]">
+    <a class="tab @(current is "General" or "GeneralSaved" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="General">@L["admin.general"]</a>
+    <a class="tab @(current == "Nodes" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Nodes">@L["admin.nodes"]</a>
+    <a class="tab @(current == "Servers" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Servers">@L["admin.servers"]</a>
+    <a class="tab @(current == "Users" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Users">@L["admin.users"]</a>
+    <a class="tab @(current == "Games" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Games">@L["admin.games"]</a>
+    <a class="tab @(current == "Rapi" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Rapi">@L["admin.rapi"]</a>
+    <a class="tab @(current == "Addons" ? "is-active" : string.Empty)"
+       asp-controller="Admin" asp-action="Addons">@L["admin.addons"]</a>
+    @foreach (var addonTab in AddonHost.AdminTabs)
+    {
+        var active = string.Equals(addonSlug, addonTab.Slug, StringComparison.OrdinalIgnoreCase);
+        <a class="tab @(active ? "is-active" : string.Empty)"
+           asp-controller="AdminAddon" asp-action="Page" asp-route-slug="@addonTab.Slug">@addonTab.Label</a>
+    }
+</nav>
